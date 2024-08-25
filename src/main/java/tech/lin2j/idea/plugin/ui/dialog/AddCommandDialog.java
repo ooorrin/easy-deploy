@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.ToggleAction;
 import com.intellij.openapi.fileTypes.FileTypes;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -51,7 +52,7 @@ public class AddCommandDialog extends DialogWrapper {
     private JBTextField pathInput;
     private EditorTextField commandEditor;
     private boolean shareCommand;
-    private ToggleActionButton shareToggleButton;
+    private ToggleAction shareToggleButton;
     private boolean shareBtnInitialized;
 
     private final Project project;
@@ -120,7 +121,7 @@ public class AddCommandDialog extends DialogWrapper {
     private JComponent titleRow() {
         if (!shareBtnInitialized) {
             Icon icon = shareCommand ? MyIcons.Actions.Shared : MyIcons.Actions.Share;
-            shareToggleButton = new ToggleActionButton("Sharable Command", icon) {
+            shareToggleButton = new ToggleAction(() -> "Sharable Command", icon) {
                 @Override
                 public boolean isSelected(AnActionEvent e) {
                     Icon icon = shareCommand ? MyIcons.Actions.Shared : MyIcons.Actions.Share;

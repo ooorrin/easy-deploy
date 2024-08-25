@@ -6,9 +6,9 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import icons.MyIcons;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import tech.lin2j.idea.plugin.event.ApplicationContext;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
@@ -48,7 +48,7 @@ public class ConfigImportAction extends NewUpdateThreadAction {
         String title = MessagesBundle.getText("dialog.ie.password.title");
         String tip = MessagesBundle.getText("dialog.ie.password.import.text");
         String password = Messages.showPasswordDialog(tip, title);
-        if (StringUtils.isBlank(password)) {
+        if (StringUtil.isEmpty(password)) {
             SwingUtilities.invokeLater(() -> Messages.showWarningDialog("Password is blank", title));
             return;
         }

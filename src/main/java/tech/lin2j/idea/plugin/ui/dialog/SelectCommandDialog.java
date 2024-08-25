@@ -3,6 +3,7 @@ package tech.lin2j.idea.plugin.ui.dialog;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionToolbarPosition;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -133,7 +134,7 @@ public class SelectCommandDialog extends DialogWrapper implements ApplicationLis
                     }
                     new AddCommandDialog(project, cmd).showAndGet();
                 })
-                .addExtraAction(AnActionButton.fromAction(new CopyCommandAction(() -> selectedCommand)))
+                .addExtraAction(new CopyCommandAction(() -> selectedCommand))
                 .addExtraAction(new RunCommandAction())
                 .createPanel();
     }
@@ -179,7 +180,7 @@ public class SelectCommandDialog extends DialogWrapper implements ApplicationLis
         CommandUtil.executeAndShowMessages(project, cmd, null, server, this);
     }
 
-    private class RunCommandAction extends AnActionButton {
+    private class RunCommandAction extends AnAction {
 
         public RunCommandAction() {
             super("Run", "Run command", AllIcons.Actions.RunAll);

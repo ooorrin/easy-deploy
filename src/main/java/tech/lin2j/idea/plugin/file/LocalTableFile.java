@@ -5,6 +5,7 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.PathUtil;
+import com.intellij.util.text.DateFormatUtil;
 import org.apache.commons.lang.time.DateFormatUtils;
 import tech.lin2j.idea.plugin.uitl.FileUtil;
 
@@ -61,7 +62,7 @@ public class LocalTableFile implements TableFile {
 
     @Override
     public String getModified() {
-        return DateFormatUtils.format(vf.lastModified(), "yyyy-MM-dd HH:mm:ss");
+        return DateFormatUtil.formatDateTime(vf.lastModified());
     }
 
     @Override
@@ -88,7 +89,7 @@ public class LocalTableFile implements TableFile {
     public String getCreated() {
         if (basicFileAttributes != null) {
             long ct = basicFileAttributes.creationTime().toMillis();
-            return DateFormatUtils.format(new Date(ct), "yyyy-MM-dd HH:mm:ss");
+            return DateFormatUtil.formatDateTime(ct);
         }
         return "";
     }

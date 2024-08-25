@@ -20,7 +20,7 @@ public class DeployConsoleToolWindowFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         // deploy tab
         DeployConsoleView deployConsoleView = new DeployConsoleView(project);
         Content deploy = contentFactory.createContent(deployConsoleView, "Dashboard", false);

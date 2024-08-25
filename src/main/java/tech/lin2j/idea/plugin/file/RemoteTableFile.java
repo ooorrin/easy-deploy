@@ -3,10 +3,10 @@ package tech.lin2j.idea.plugin.file;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.PlatformIcons;
+import com.intellij.util.text.DateFormatUtil;
 import net.schmizz.sshj.sftp.FileMode;
 import net.schmizz.sshj.sftp.RemoteResourceInfo;
 import net.schmizz.sshj.xfer.FilePermission;
-import org.apache.commons.lang.time.DateFormatUtils;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.uitl.FileUtil;
 import tech.lin2j.idea.plugin.uitl.PosixUtil;
@@ -24,7 +24,7 @@ public class RemoteTableFile implements TableFile {
     private final RemoteResourceInfo remoteResourceInfo;
     private final FileMode.Type type;
     private final SshServer server;
-    private FileType fileType;
+    private final FileType fileType;
     private final Icon icon;
 
     public RemoteTableFile(SshServer server, RemoteResourceInfo remoteResourceInfo) {
@@ -66,7 +66,7 @@ public class RemoteTableFile implements TableFile {
     @Override
     public String getModified() {
         long time = remoteResourceInfo.getAttributes().getAtime() * 1000;
-        return DateFormatUtils.format(time, "yyyy-MM-dd HH:mm:ss");
+        return DateFormatUtil.formatDateTime(time);
     }
 
     @Override

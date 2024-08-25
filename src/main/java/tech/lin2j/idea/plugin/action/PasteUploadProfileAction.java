@@ -5,8 +5,8 @@ import com.google.gson.JsonSyntaxException;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.text.StringUtil;
 import icons.MyIcons;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import tech.lin2j.idea.plugin.model.UploadProfile;
 
@@ -31,7 +31,7 @@ public class PasteUploadProfileAction extends NewUpdateThreadAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         try {
             String json = CopyPasteManager.getInstance().getContents(DataFlavor.stringFlavor);
-            if (StringUtils.isBlank(json)) {
+            if (StringUtil.isEmpty(json)) {
                 return;
             }
             Gson gson = new Gson();

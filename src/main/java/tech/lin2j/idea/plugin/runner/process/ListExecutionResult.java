@@ -106,7 +106,7 @@ public class ListExecutionResult implements ExecutionResult {
     private Content createNewContent(RunContentDescriptor descriptor) {
         String processDisplayName = descriptor.getDisplayName();
         Content content =
-                ContentFactory.SERVICE.getInstance().createContent(descriptor.getComponent(), processDisplayName, true);
+                ContentFactory.getInstance().createContent(descriptor.getComponent(), processDisplayName, true);
         content.putUserData(ToolWindow.SHOW_CONTENT_ICON, Boolean.TRUE);
         Icon icon = descriptor.getIcon();
         content.setIcon(icon == null ? executor.getToolWindowIcon() : icon);

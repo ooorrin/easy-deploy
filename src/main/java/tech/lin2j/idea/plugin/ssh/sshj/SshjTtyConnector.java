@@ -1,6 +1,5 @@
 package tech.lin2j.idea.plugin.ssh.sshj;
 
-import com.jediterm.terminal.Questioner;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.transport.TransportException;
@@ -41,14 +40,13 @@ public class SshjTtyConnector implements CustomTtyConnector {
         this.connection = connection;
         this.sshClient = connection.getSshClient();
         this.workingDirectory = workingDirectory;
-        this.init(null);
+        this.initConnector();
     }
 
-    @Override
-    public boolean init(Questioner questioner) {
+    public void initConnector() {
         if (!sshClient.isConnected()) {
             isInitiated.set(true);
-            return false;
+            return;
         }
         try {
             Session session = sshClient.startSession();
@@ -63,13 +61,11 @@ public class SshjTtyConnector implements CustomTtyConnector {
                 outputStream.write(("cd " + wd + "\n").getBytes(StandardCharsets.UTF_8));
                 outputStream.flush();
             }
-            return true;
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         } finally {
             isInitiated.set(true);
         }
-        return false;
     }
 
     @Override

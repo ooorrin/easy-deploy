@@ -1,8 +1,8 @@
 package tech.lin2j.idea.plugin.model;
 
 import com.intellij.openapi.progress.util.ColorProgressBar;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.ColorUtil;
-import org.apache.commons.lang.StringUtils;
 import tech.lin2j.idea.plugin.enums.I18nType;
 import tech.lin2j.idea.plugin.enums.SFTPAction;
 import tech.lin2j.idea.plugin.uitl.FileUtil;
@@ -123,7 +123,7 @@ public class PluginSetting {
     }
 
     public String getDefaultExportImportPath() {
-        if (StringUtils.isBlank(defaultExportImportPath)) {
+        if (StringUtil.isEmpty(defaultExportImportPath)) {
             defaultExportImportPath = FileUtil.getHome().getPath();
         }
         return defaultExportImportPath;

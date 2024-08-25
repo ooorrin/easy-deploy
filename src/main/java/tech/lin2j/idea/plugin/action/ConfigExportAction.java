@@ -3,8 +3,8 @@ package tech.lin2j.idea.plugin.action;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.text.StringUtil;
 import icons.MyIcons;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.ConfigImportExport;
@@ -35,7 +35,7 @@ public class ConfigExportAction extends NewUpdateThreadAction {
             String title = MessagesBundle.getText("dialog.ie.password.title");
             String tip = MessagesBundle.getText("dialog.ie.password.export.text");
             String password = Messages.showPasswordDialog(tip, title);
-            if (StringUtils.isBlank(password)) {
+            if (StringUtil.isEmpty(password)) {
                 SwingUtilities.invokeLater(() -> {
                     Messages.showWarningDialog("Password is blank", title);
                 });

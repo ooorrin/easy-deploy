@@ -2,6 +2,7 @@ package tech.lin2j.idea.plugin.ui.dialog;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
@@ -32,18 +33,18 @@ public class InputConfirmDialog extends DialogWrapper {
     public InputConfirmDialog(Project project,
                               String title, String message, String confirm, String okText) {
         super(project);
-
         Objects.requireNonNull(confirm);
 
         this.message = message;
         this.confirm = confirm;
 
         initInput();
-
         setTitle(title);
-        if (StringUtils.isNotBlank(okText)) {
+
+        if (StringUtil.isNotEmpty(okText)) {
             setOKButtonText(okText);
         }
+
         setOKActionEnabled(false);
         setSize(600, 400);
         init();

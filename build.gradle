@@ -31,6 +31,7 @@ intellij {
 //    version = '2023.3.5'
 //    type = 'IU'
     plugins = [
+            'com.intellij.java',
             "org.jetbrains.plugins.terminal",
     ]
     updateSinceUntilBuild = false

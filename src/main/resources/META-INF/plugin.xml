@@ -218,6 +218,11 @@
         <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.ExcelFileType" fieldName="INSTANCE" name="Excel" extensions="xlsx;xls"/>
         <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.PptFileType" fieldName="INSTANCE" name="PPT" extensions="ppt;pptx"/>
         <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.LogFileType" fieldName="INSTANCE" name="Log" extensions="log"/>
+
+        <applicationService
+                id="HotReloadServiceImpl"
+                serviceInterface="tech.lin2j.idea.plugin.service.IHotReloadService"
+                serviceImplementation="tech.lin2j.idea.plugin.service.impl.HotReloadServiceImpl"/>
     </extensions>
 
     <applicationListeners>
@@ -226,7 +231,12 @@
     </applicationListeners>
 
     <actions>
-        <!-- Add your actions here -->
+<!--        <action id="Terminal.OpenSFTP" class="tech.lin2j.idea.plugin.action.OpenInSFTPPanelAction" text="Open In SFTP">-->
+<!--            <add-to-group group-id="ToolWindowContextMenu" anchor="last"/>-->
+<!--        </action>-->
+        <action id="EasyDeploy.HotReload" class="tech.lin2j.idea.plugin.action.ClassHotReloadAction" text="热部署" description="Class hot reload">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="EditorPopupMenu" />
+        </action>
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">

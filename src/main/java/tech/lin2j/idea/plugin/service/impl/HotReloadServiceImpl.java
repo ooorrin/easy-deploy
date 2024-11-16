@@ -23,6 +23,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author linjinjia
@@ -63,47 +66,22 @@ public class HotReloadServiceImpl implements IHotReloadService {
     }
 
     @Override
-    public void attachRemoteJavaProcess(SshjConnection conn, int processId, String processName) throws IOException {
-        String arthasCmd = String.format(ATTACH_PATTERN, getArthasBootJar(), processId, 3658, 8563);
+    public void attachRemoteJavaProcess(SshjConnection conn, int pid, int httpPort) throws IOException {
+        String arthasCmd = String.format(ATTACH_PATTERN, getArthasBootJar(), pid, httpPort + 1, httpPort);
         System.out.println(arthasCmd);
         SshStatus result = conn.execute(arthasCmd);
         if (result.isSuccess()) {
-            System.out.println("attach success " + processName);
+            System.out.println("attach success " + pid);
             return;
         }
         Messages.showErrorDialog(result.getMessage(), "Attach Remote Java Process");
     }
 
     @Override
-    public String compileAndUploadClass(SshjConnection conn, PsiJavaFile psiFile, Project project) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        StringBuilder buffer = new StringBuilder();
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                doCompileAndSend(conn, psiFile, project, buffer);
-            } finally {
-                latch.countDown();
-            }
-        });
-        latch.await();
-        return buffer.toString();
-    }
-
-    /**
-     * Compiles the specified Java source file and uploads the compiled class file to a remote server.
-     * Stores the remote location of the uploaded class file in the provided buffer.
-     *
-     * <p>This method compiles the Java source code represented by the PsiJavaFile object within the context
-     * of the specified project. After successful compilation, the compiled class file is uploaded to the
-     * remote server via the SSH connection. The location of the uploaded class file on the remote server
-     * is then appended to the provided StringBuilder buffer.</p>
-     *
-     * @param conn    the SSH connection to the remote server, used for uploading the compiled class file
-     * @param psiFile the PsiJavaFile object representing the Java source code to be compiled
-     * @param project the Project context in which the compilation occurs
-     * @param buffer  the StringBuilder that will contain the remote location of the uploaded class file
-     */
-    private void doCompileAndSend(SshjConnection conn, PsiJavaFile psiFile, Project project, StringBuilder buffer) {
+    public void compileAndUploadClass(SshjConnection conn,
+                                      PsiJavaFile psiFile,
+                                      Project project,
+                                      int httpPort) {
         ProjectTaskManager instance = ProjectTaskManager.getInstance(project);
         Promise<ProjectTaskManager.Result> promise = instance.compile(psiFile.getVirtualFile());
         promise.then(result -> {
@@ -124,7 +102,8 @@ public class HotReloadServiceImpl implements IHotReloadService {
                     continue;
                 }
                 // 发送文件到服务器
-                buffer.append(sendClassFile(conn, module, cf.getAbsolutePath(), classPackage, classFilename));
+                String targetClass = sendClassFile(conn, module, cf.getAbsolutePath(), classPackage, classFilename);
+                requestArthasRetransform(conn, targetClass, httpPort);
                 break;
             }
             return result.hasErrors();
@@ -132,18 +111,22 @@ public class HotReloadServiceImpl implements IHotReloadService {
     }
 
     @Override
-    public void requestArthasRetransform(SshjConnection conn, String targetClass) throws IOException {
+    public void requestArthasRetransform(SshjConnection conn, String targetClass, int httpPort) {
 
-        String url = String.format(ARTHAS_SERVICE_PATTERN, 8563);
+        String url = String.format(ARTHAS_SERVICE_PATTERN, httpPort);
         String arthasCmd = String.format(RETRANSFORM_DATA_PATTERN, getHotClassDirectory() + targetClass);
         String curlCmd = String.format(CURL_PATTERN, url, arthasCmd);
 
         System.out.println(curlCmd);
-        SshStatus result = conn.execute(curlCmd);
-        if (!result.isSuccess()) {
-            Messages.showErrorDialog(result.getMessage(), "Arthas Retransform");
-        } else {
-            System.out.println("curl completed: " + result.getMessage());
+        try {
+            SshStatus result = conn.execute(curlCmd);
+            if (!result.isSuccess()) {
+                Messages.showErrorDialog(result.getMessage(), "Arthas Retransform");
+            } else {
+                System.out.println("curl completed: " + result.getMessage());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

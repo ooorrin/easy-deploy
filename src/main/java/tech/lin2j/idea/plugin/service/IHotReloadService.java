@@ -6,6 +6,8 @@ import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public interface IHotReloadService {
 
@@ -36,10 +38,9 @@ public interface IHotReloadService {
      *
      * @param conn        the SSH connection to the remote server
      * @param processId   the ID of the Java process to attach to
-     * @param processName the name of the Java process (used for verification or logging purposes)
      * @throws IOException if an I/O error occurs during the attachment process
      */
-    void attachRemoteJavaProcess(SshjConnection conn, int processId, String processName) throws IOException;
+    void attachRemoteJavaProcess(SshjConnection conn, int processId, int httpPort) throws IOException;
 
     /**
      * Compiles a Java class from the given source file and uploads the compiled class to a remote server
@@ -52,10 +53,10 @@ public interface IHotReloadService {
      * @param conn    the SSH connection to the remote server
      * @param psiFile the PsiJavaFile object representing the Java source code to compile
      * @param project the Project context in which the compilation occurs
-     * @return the path or identifier of the uploaded class file on the remote server
      * @throws InterruptedException if the compilation or upload process is interrupted
      */
-    String compileAndUploadClass(SshjConnection conn, PsiJavaFile psiFile, Project project) throws InterruptedException;
+    void compileAndUploadClass(SshjConnection conn, PsiJavaFile psiFile, Project project, int httpPort)
+            throws InterruptedException;
 
     /**
      * Requests a hot-retransform (hot update) of the specified Java class on a remote server using
@@ -69,5 +70,5 @@ public interface IHotReloadService {
      * @param targetClass the fully qualified name of the target class to retransform
      * @throws IOException if an I/O error occurs during the retransform request
      */
-    void requestArthasRetransform(SshjConnection conn, String targetClass) throws IOException;
+    void requestArthasRetransform(SshjConnection conn, String targetClass, int httpPort) throws IOException;
 }

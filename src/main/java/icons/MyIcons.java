@@ -45,6 +45,7 @@ public interface MyIcons {
         Icon Share = IconLoader.getIcon("/icons/actions/my_share.svg", MyIcons.class);
         Icon Shared = IconLoader.getIcon("/icons/actions/my_share_selected.svg", MyIcons.class);
         Icon ATTACH = IconLoader.getIcon("/icons/actions/my_attach.svg", MyIcons.class);
+        Icon UPLOAD = IconLoader.getIcon("/icons/actions/my_upload.svg", MyIcons.class);
     }
 
     interface FileType {

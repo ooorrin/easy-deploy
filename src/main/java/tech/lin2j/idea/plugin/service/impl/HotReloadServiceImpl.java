@@ -1,6 +1,5 @@
 package tech.lin2j.idea.plugin.service.impl;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
@@ -22,10 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.Objects;
 
 /**
  * @author linjinjia
@@ -36,7 +32,21 @@ public class HotReloadServiceImpl implements IHotReloadService {
     static final String ATTACH_PATTERN = "bash -lc 'java -jar %s -attach-only %s --telnet-port %s --http-port %s'";
     static final String ARTHAS_SERVICE_PATTERN = "http://127.0.0.1:%s/api";
     static final String RETRANSFORM_DATA_PATTERN = "{\"action\": \"exec\",\"command\": \"retransform %s\"}";
+    static final String SESSION_PATTERN = "{\"action\": \"exec\",\"command\": \"session\"}";
     static final String CURL_PATTERN = "curl -Ss -XPOST %s -d '%s'";
+
+    @Override
+    public boolean isAttached(SshjConnection conn, int pid, int httpPort) throws IOException {
+        String url = String.format(ARTHAS_SERVICE_PATTERN, httpPort);
+        String curlCmd = String.format(CURL_PATTERN, url, SESSION_PATTERN);
+        String pipeCmd = curlCmd + " | awk -F 'javaPid\\\":' '{print $2}' | awk -F ',' '{print $1}'";
+        SshStatus result = conn.execute(pipeCmd);
+        if (result.isSuccess()) {
+            String remotePid = result.getMessage().replaceAll("\n", "");
+            return Objects.equals(pid + "", remotePid);
+        }
+        return false;
+    }
 
     @Override
     public void uploadArthasPack(SshjConnection conn) throws IOException {
@@ -134,7 +144,8 @@ public class HotReloadServiceImpl implements IHotReloadService {
         return "/tmp/EasyDeploy/tool/";
     }
 
-    private String getArthasBootJar() {
+    @Override
+    public String getArthasBootJar() {
         return getToolDirectory() + "arthas-bin/arthas-boot.jar";
     }
 
@@ -158,8 +169,9 @@ public class HotReloadServiceImpl implements IHotReloadService {
         }
     }
 
-    private boolean isArthasPackExist(SshjConnection conn) throws IOException {
-        SshStatus result = conn.execute("ls " + getRemotePackPath());
+    @Override
+    public boolean isArthasPackExist(SshjConnection conn) throws IOException {
+        SshStatus result = conn.execute("ls " + getArthasBootJar());
         if (!result.isSuccess()) {
             if (result.getMessage().contains("No such file")) {
                 return false;

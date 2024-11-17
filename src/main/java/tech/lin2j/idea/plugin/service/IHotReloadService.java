@@ -6,10 +6,10 @@ import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 public interface IHotReloadService {
+
+    boolean isAttached(SshjConnection conn, int pid, int httpPort) throws IOException;
 
     /**
      * Uploads the Arthas package to a remote server via SSH connection.
@@ -71,4 +71,8 @@ public interface IHotReloadService {
      * @throws IOException if an I/O error occurs during the retransform request
      */
     void requestArthasRetransform(SshjConnection conn, String targetClass, int httpPort) throws IOException;
+
+    String getArthasBootJar();
+
+    boolean isArthasPackExist(SshjConnection conn) throws IOException;
 }

@@ -1,5 +1,6 @@
 package tech.lin2j.idea.plugin.service;
 
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiJavaFile;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
@@ -18,6 +19,8 @@ public interface IHotReloadService {
      * @throws IOException if an I/O error occurs during the file upload process
      */
     void uploadArthasPack(SshjConnection conn) throws IOException;
+
+    void uploadArthasPack(SshjConnection conn, ProgressIndicator indicator) throws IOException;
 
     /**
      * Retrieves a list of Java processes running on a remote server via an SSH connection

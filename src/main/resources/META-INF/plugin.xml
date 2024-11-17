@@ -223,6 +223,8 @@
                 id="HotReloadServiceImpl"
                 serviceInterface="tech.lin2j.idea.plugin.service.IHotReloadService"
                 serviceImplementation="tech.lin2j.idea.plugin.service.impl.HotReloadServiceImpl"/>
+
+        <notification.group id="ed-hot-reload" />
     </extensions>
 
     <applicationListeners>
@@ -249,5 +251,6 @@
         />
         <applicationService serviceImplementation="tech.lin2j.idea.plugin.model.ConfigPersistence"/>
         <configurationType implementation="tech.lin2j.idea.plugin.runner.DeployRunConfigurationType"/>
+
     </extensions>
 </idea-plugin>

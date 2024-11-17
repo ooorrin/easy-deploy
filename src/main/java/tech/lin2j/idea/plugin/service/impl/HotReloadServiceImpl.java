@@ -1,8 +1,14 @@
 package tech.lin2j.idea.plugin.service.impl;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationGroup;
+import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.compiler.CompilerPaths;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiJavaFile;
@@ -11,6 +17,7 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.concurrency.Promise;
 import tech.lin2j.idea.plugin.service.IHotReloadService;
+import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 import tech.lin2j.idea.plugin.uitl.FileUtil;
@@ -28,6 +35,9 @@ import java.util.Objects;
  * @date 2024/10/20 15:28
  */
 public class HotReloadServiceImpl implements IHotReloadService {
+
+    private static final Logger log = Logger.getInstance(HotReloadServiceImpl.class);
+
     static final String ARTHAS_PACK = "arthas.tar.gz";
     static final String ATTACH_PATTERN = "bash -lc 'java -jar %s -attach-only %s --telnet-port %s --http-port %s'";
     static final String ARTHAS_SERVICE_PATTERN = "http://127.0.0.1:%s/api";
@@ -66,6 +76,40 @@ public class HotReloadServiceImpl implements IHotReloadService {
     }
 
     @Override
+    public void uploadArthasPack(SshjConnection conn, ProgressIndicator indicator) throws IOException {
+        indicator.setText("Check if arthas pack exist");
+        indicator.setFraction(0.1f);
+        conn.mkdirs(getToolDirectory());
+        if (isArthasPackExist(conn)) {
+            showBalloonMessage("Arthas Pack", "Arthas Pack already exist");
+            indicator.setFraction(1f);
+            return;
+        }
+        indicator.setFraction(0.3f);
+        indicator.setText("Copy to local");
+        String localPackPath = extractArthasPack();
+        if (localPackPath.isEmpty()) {
+            showBalloonMessage("Arthas Pack", "Copy of toolkit to local failed, please try again");
+            indicator.setFraction(1f);
+            return;
+        }
+
+        indicator.setFraction(0.5f);
+        indicator.setText("Upload arthas pack");
+        conn.upload(localPackPath, getToolDirectory());
+
+        indicator.setFraction(0.8f);
+        indicator.setText("Extract arthas pack");
+        SshStatus unpackResult = conn.execute("cd " + getToolDirectory() + "&& tar -xzvf " + getRemotePackPath());
+        if (unpackResult.isSuccess()) {
+            showBalloonMessage("Arthas Pack", "Tool kit initialization successful");
+        } else {
+            showBalloonMessage("Arthas Pack", unpackResult.getMessage());
+        }
+        indicator.setFraction(1f);
+    }
+
+    @Override
     public List<String> listJavaProcess(SshjConnection conn) throws IOException {
         SshStatus result = conn.execute("bash -lc 'jps'");
         if (result.isSuccess()) {
@@ -78,13 +122,14 @@ public class HotReloadServiceImpl implements IHotReloadService {
     @Override
     public void attachRemoteJavaProcess(SshjConnection conn, int pid, int httpPort) throws IOException {
         String arthasCmd = String.format(ATTACH_PATTERN, getArthasBootJar(), pid, httpPort + 1, httpPort);
-        System.out.println(arthasCmd);
+        log.info(arthasCmd);
         SshStatus result = conn.execute(arthasCmd);
         if (result.isSuccess()) {
-            System.out.println("attach success " + pid);
-            return;
+            String msg = String.format("Attach process [%s] successful", pid);
+            showBalloonMessage("Attach Remote Java Process", msg);
+        } else {
+            showBalloonMessage("Attach Process Failed", result.getMessage());
         }
-        Messages.showErrorDialog(result.getMessage(), "Attach Remote Java Process");
     }
 
     @Override
@@ -207,4 +252,8 @@ public class HotReloadServiceImpl implements IHotReloadService {
         return localPackPath;
     }
 
+    private void showBalloonMessage(String title, String content) {
+        PluginNotificationService service = ServiceManager.getService(PluginNotificationService.class);
+        service.showHotReloadNotification(title, content);
+    }
 }

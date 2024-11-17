@@ -7,6 +7,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -28,6 +31,7 @@ import tech.lin2j.idea.plugin.exception.IllegalFileTypeException;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.HotReloadPersistence;
 import tech.lin2j.idea.plugin.service.IHotReloadService;
+import tech.lin2j.idea.plugin.service.impl.PluginNotificationService;
 import tech.lin2j.idea.plugin.ssh.JavaProcess;
 import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
@@ -60,6 +64,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
     private final JPanel root;
     private final HotReloadPersistence projectConfig;
     private final IHotReloadService hotReloadService;
+    private final PluginNotificationService notificationService;
     private final JBLabel attachedStatusTip = new JBLabel();
     private ComboBox<SshServer> serverComboBox;
     private ComboBox<JavaProcess> javaProcessComboBox;
@@ -79,6 +84,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
         this.project = project;
         this.event = event;
         this.hotReloadService = ServiceManager.getService(IHotReloadService.class);
+        this.notificationService = ServiceManager.getService(PluginNotificationService.class);
         this.projectConfig = this.project.getService(HotReloadPersistence.class).getState();
         assert projectConfig != null;
         this.sshId = projectConfig.getSshId();
@@ -97,8 +103,8 @@ public class ClassHotReloadDialog extends DialogWrapper {
                 .setVerticalGap(8)
                 .addLabeledComponent("Remote Server", serverComboBox)
                 .addLabeledComponent("Remote Process", processRefreshContainer)
-                .addLabeledComponent("Arthas Pack", arthasPackContainer)
-                .addLabeledComponent("Arthas Http Port", processBindContainer)
+                .addLabeledComponent("Remote Arthas Pack", arthasPackContainer)
+                .addLabeledComponent("Arthas HTTP Port", processBindContainer)
                 .addLabeledComponent("Target Java Class", targetClassFileLabel)
                 .getPanel();
 
@@ -115,9 +121,10 @@ public class ClassHotReloadDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        if (ensureArthasPack()) {
+        if (isArthasPackNotExist()) {
             return;
         }
+
         try {
             PsiFile data = event.getData(CommonDataKeys.PSI_FILE);
             if (data instanceof PsiJavaFile) {
@@ -173,7 +180,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
 
         // upload arthas pack
         DefaultActionGroup uploadGroup = new DefaultActionGroup();
-        uploadGroup.add(new UploadArthasPackAction());
+        uploadGroup.add(new UploadArthasPackAction(this));
         ActionToolbar uploadToolbar = ActionManager.getInstance()
                 .createActionToolbar("ClassHotReloadDialog@Upload", uploadGroup, true);
         bindToolbar.setTargetComponent(null);
@@ -270,25 +277,14 @@ public class ClassHotReloadDialog extends DialogWrapper {
         }
     }
 
-    private boolean ensureArthasPack() {
-        try {
-            if (!arthasPackExist) {
-                int upload = Messages.showYesNoDialog(
-                        "The server does not have the Arthas toolkit yet. Would you like to upload it?",
-                        "Arthas Tool",
-                        null);
-                if (upload == Messages.YES) {
-                    hotReloadService.uploadArthasPack(getSshjConnection());
-                    arthasPackExist = true;
-                    arthasStatusLabel.setText(hotReloadService.getArthasBootJar());
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        } catch (IOException ex) {
-            return false;
+    private boolean isArthasPackNotExist() {
+        if (arthasPackExist) {
+            return true;
         }
+        Messages.showInfoMessage(
+                "The server does not have the Arthas toolkit yet. Please upload it first",
+                "Arthas Tool"
+        );
         return false;
     }
 
@@ -369,9 +365,10 @@ public class ClassHotReloadDialog extends DialogWrapper {
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            if (ensureArthasPack()) {
+            if (isArthasPackNotExist()) {
                 return;
             }
+
             try {
                 assert projectConfig != null;
                 if (projectConfig.getSshId() == null || projectConfig.getPid() == null) {
@@ -386,18 +383,28 @@ public class ClassHotReloadDialog extends DialogWrapper {
     }
 
     public class UploadArthasPackAction extends AnAction {
-        public UploadArthasPackAction() {
+        private final DialogWrapper dialogWrapper;
+
+        public UploadArthasPackAction(DialogWrapper dialogWrapper) {
             super("Upload", "Upload arthas pack", MyIcons.Actions.UPLOAD);
+            this.dialogWrapper = dialogWrapper;
         }
 
         @Override
         public void actionPerformed(@NotNull AnActionEvent e) {
-            try {
-                hotReloadService.uploadArthasPack(getSshjConnection());
-                checkArthasToolPack();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            ProgressManager.getInstance().run(new Task.Backgroundable(project, "Upload Arthas Pack") {
+                @Override
+                public void run(@NotNull ProgressIndicator progressIndicator) {
+                    progressIndicator.setIndeterminate(false);
+                    try {
+                        hotReloadService.uploadArthasPack(getSshjConnection(), progressIndicator);
+                        checkArthasToolPack();
+                    } catch (IOException ex) {
+                        progressIndicator.setFraction(1f);
+                    }
+                }
+            });
+            dialogWrapper.close(0);
         }
     }
 }

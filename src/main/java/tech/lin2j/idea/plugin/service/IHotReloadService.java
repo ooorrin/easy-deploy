@@ -10,7 +10,14 @@ import java.util.List;
 
 public interface IHotReloadService {
 
-    boolean isAttached(SshjConnection conn, int pid, int httpPort) throws IOException;
+    /**
+     * Checks whether the Arthas toolkit exists at the specified location on the server.
+     *
+     * @param conn the SSH connection to the remote server.
+     * @return {@code true} if the Arthas toolkit exists, {@code false} otherwise.
+     * @throws IOException if an I/O error occurs during the operation.
+     */
+    boolean isArthasPackExist(SshjConnection conn) throws IOException;
 
     /**
      * Uploads the Arthas package to a remote server via SSH connection.
@@ -18,9 +25,7 @@ public interface IHotReloadService {
      * @param conn the SSH connection to the remote server
      * @throws IOException if an I/O error occurs during the file upload process
      */
-    void uploadArthasPack(SshjConnection conn) throws IOException;
-
-    void uploadArthasPack(SshjConnection conn, ProgressIndicator indicator) throws IOException;
+    void uploadArthasPack(Project project, SshjConnection conn, ProgressIndicator indicator) throws IOException;
 
     /**
      * Retrieves a list of Java processes running on a remote server via an SSH connection
@@ -33,33 +38,52 @@ public interface IHotReloadService {
     List<String> listJavaProcess(SshjConnection conn) throws IOException;
 
     /**
-     * Attaches to a remote Java process using the Arthas diagnostic tool via an SSH connection.
+     * Checks whether the given process ID (PID) is bound to the specified HTTP port.
      *
-     * <p>This method utilizes the Arthas tool package to connect to the specified Java process on a
-     * remote server by using its process ID and optionally its process name. This can be used for
-     * remote debugging, monitoring, or diagnostics.</p>
-     *
-     * @param conn        the SSH connection to the remote server
-     * @param processId   the ID of the Java process to attach to
-     * @throws IOException if an I/O error occurs during the attachment process
+     * @param conn     the SSH connection to the remote server.
+     * @param pid      the process ID to check.
+     * @param httpPort the HTTP port to verify binding with the process.
+     * @return {@code true} if the specified PID is bound to the given HTTP port, {@code false} otherwise.
+     * @throws IOException if an I/O error occurs during the operation.
      */
-    void attachRemoteJavaProcess(SshjConnection conn, int processId, int httpPort) throws IOException;
+    boolean isAttached(SshjConnection conn, int pid, int httpPort) throws IOException;
 
     /**
-     * Compiles a Java class from the given source file and uploads the compiled class to a remote server
-     * via an SSH connection.
+     * Attaches the specified Java process to Arthas and binds it to the given HTTP port.
+     * Upon successful binding, a file is created in the plugin directory on the server.
+     * The file name is the process ID, and its content is the bound port number,
+     * facilitating the functionality of the {@code getHttpPort} method.
      *
-     * <p>This method takes a PsiJavaFile object representing the Java source code and compiles it. After
-     * successful compilation, the resulting class file is uploaded to the specified dir of remote server,
-     * allowing the code to be executed or used remotely.</p>
-     *
-     * @param conn    the SSH connection to the remote server
-     * @param psiFile the PsiJavaFile object representing the Java source code to compile
-     * @param project the Project context in which the compilation occurs
-     * @throws InterruptedException if the compilation or upload process is interrupted
+     * @param project   the current IDEA project context.
+     * @param conn      the SSH connection to the remote server.
+     * @param processId the process ID of the Java application to attach.
+     * @param httpPort  the HTTP port to bind the Arthas instance to.
+     * @throws IOException if an I/O error occurs during the operation.
      */
-    void compileAndUploadClass(SshjConnection conn, PsiJavaFile psiFile, Project project, int httpPort)
-            throws InterruptedException;
+    void attachRemoteJavaProcess(Project project, SshjConnection conn, int processId, int httpPort) throws IOException;
+
+    /**
+     * Retrieves the HTTP port bound to the Arthas instance for the specified process ID (PID).
+     * If the process is not bound to any port, {@code null} is returned.
+     *
+     * @param connection the SSH connection to the remote server.
+     * @param pid        the process ID for which to retrieve the Arthas HTTP port.
+     * @return the HTTP port number bound to the Arthas instance, or {@code null} if not bound.
+     * @throws IOException if an I/O error occurs during the operation.
+     */
+    Integer getAttachedHttpPort(SshjConnection connection, int pid) throws IOException;
+
+    /**
+     * Compiles the specified Java file and, upon successful compilation, uploads the compiled class
+     * to a designated directory on the remote server. The uploaded class is then used for hot code
+     * replacement via the Arthas toolkit.
+     *
+     * @param conn     the SSH connection to the remote server.
+     * @param psiFile  the Java file to be compiled.
+     * @param project  the current IDEA project context.
+     * @param httpPort the HTTP port of the Arthas instance for performing the hot code update.
+     */
+    void compileAndRetransformClass(SshjConnection conn, PsiJavaFile psiFile, Project project, int httpPort);
 
     /**
      * Requests a hot-retransform (hot update) of the specified Java class on a remote server using
@@ -69,13 +93,18 @@ public interface IHotReloadService {
      * remote server, enabling hot code updates without requiring a full application restart. This is
      * useful for applying changes to the Java class dynamically in a production or testing environment.</p>
      *
+     * @param project     project
      * @param conn        the SSH connection to the remote server
      * @param targetClass the fully qualified name of the target class to retransform
      * @throws IOException if an I/O error occurs during the retransform request
      */
-    void requestArthasRetransform(SshjConnection conn, String targetClass, int httpPort) throws IOException;
+    void retransform(Project project, SshjConnection conn, String targetClass, int httpPort) throws IOException;
 
+    /**
+     * Retrieves the location of the Arthas toolkit JAR file on the server.
+     *
+     * @return the file path to the Arthas boot JAR on the server.
+     */
     String getArthasBootJar();
 
-    boolean isArthasPackExist(SshjConnection conn) throws IOException;
 }

@@ -225,6 +225,7 @@
                 serviceImplementation="tech.lin2j.idea.plugin.service.impl.HotReloadServiceImpl"/>
 
         <notification.group id="ed-hot-reload" />
+        <webHelpProvider implementation="tech.lin2j.idea.plugin.ui.HotReloadWebHelper" id="hotReloadWebHelper" />
     </extensions>
 
     <applicationListeners>

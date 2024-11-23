@@ -37,6 +37,8 @@ import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -44,8 +46,8 @@ import javax.swing.SpinnerNumberModel;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -66,6 +68,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
     private final IHotReloadService hotReloadService;
     private final PluginNotificationService notificationService;
     private final JBLabel attachedStatusTip = new JBLabel();
+    private boolean attached;
     private ComboBox<SshServer> serverComboBox;
     private ComboBox<JavaProcess> javaProcessComboBox;
     private JPanel processRefreshContainer;
@@ -89,6 +92,14 @@ public class ClassHotReloadDialog extends DialogWrapper {
         assert projectConfig != null;
         this.sshId = projectConfig.getSshId();
 
+        if (sshId == null) {
+            new SelectServerDialog(project).show();
+            sshId = projectConfig.getSshId();
+            if (sshId == null) {
+                throw new RuntimeException("must select one server");
+            }
+        }
+
         this.sshjConnection = project.getUserData(SSHJ_CONNECTION);
         this.javaProcesses = project.getUserData(JAVA_PROCESSES);
 
@@ -97,6 +108,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
         initComboBox();
         initContainer();
 
+        checkArthasToolPack();
         setAttachStatus(); // ClassHotReloadDialog
 
         root = FormBuilder.createFormBuilder()
@@ -120,19 +132,29 @@ public class ClassHotReloadDialog extends DialogWrapper {
     }
 
     @Override
+    protected @NotNull Action[] createActions() {
+        return new Action[]{
+                super.getHelpAction(),
+                new AttachRemoteJavaProcessAction(),
+                super.getOKAction()
+        };
+    }
+
+    @Override
+    protected @Nullable String getHelpId() {
+        return "hotReloadWebHelper";
+    }
+
+    @Override
     protected void doOKAction() {
         if (isArthasPackNotExist()) {
             return;
         }
 
-        try {
-            PsiFile data = event.getData(CommonDataKeys.PSI_FILE);
-            if (data instanceof PsiJavaFile) {
-                PsiJavaFile javaFile = (PsiJavaFile) data;
-                hotReloadService.compileAndUploadClass(sshjConnection, javaFile, project, projectConfig.getHttpPort());
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        PsiFile data = event.getData(CommonDataKeys.PSI_FILE);
+        if (data instanceof PsiJavaFile) {
+            PsiJavaFile javaFile = (PsiJavaFile) data;
+            hotReloadService.compileAndRetransformClass(sshjConnection, javaFile, project, projectConfig.getHttpPort());
         }
         super.doOKAction();
     }
@@ -167,15 +189,8 @@ public class ClassHotReloadDialog extends DialogWrapper {
                 JBUI.emptyInsets(), 0, 0));
 
         // bind remote java process
-        DefaultActionGroup bindGroup = new DefaultActionGroup();
-        bindGroup.add(new AttachRemoteJavaProcessAction());
-        ActionToolbar bindToolbar = ActionManager.getInstance()
-                .createActionToolbar("ClassHotReloadDialog@Bind", bindGroup, true);
-        bindToolbar.setTargetComponent(null);
-
         processBindContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         processBindContainer.add(arthasHttpPortInput);
-        processBindContainer.add(bindToolbar.getComponent());
         processBindContainer.add(attachedStatusTip);
 
         // upload arthas pack
@@ -183,7 +198,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
         uploadGroup.add(new UploadArthasPackAction(this));
         ActionToolbar uploadToolbar = ActionManager.getInstance()
                 .createActionToolbar("ClassHotReloadDialog@Upload", uploadGroup, true);
-        bindToolbar.setTargetComponent(null);
+        uploadToolbar.setTargetComponent(null);
         arthasPackContainer = new JPanel(new GridBagLayout());
         arthasPackContainer.add(arthasStatusLabel, new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
                 JBUI.emptyInsets(), 0, 0));
@@ -192,11 +207,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
     }
 
     private void initInput() {
-        Integer httpPort = projectConfig.getHttpPort();
-        if (httpPort == null) {
-            httpPort = RandomUtils.nextInt(35000, 40000);
-            projectConfig.setHttpPort(httpPort);
-        }
+        Integer httpPort = getPortOrSetRandomPort();
         SpinnerNumberModel model = new SpinnerNumberModel(httpPort.intValue(), 3500, 40000, 1);
         this.arthasHttpPortInput = new JSpinner(model);
         this.arthasHttpPortInput.addChangeListener(e -> {
@@ -204,38 +215,58 @@ public class ClassHotReloadDialog extends DialogWrapper {
         });
     }
 
+    private @NotNull Integer getPortOrSetRandomPort() {
+        try {
+            if (projectConfig.getPid() != null) {
+                Integer port = hotReloadService.getAttachedHttpPort(getSshjConnection(), projectConfig.getPid());
+                if (port != null) {
+                    projectConfig.setHttpPort(port);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        Integer httpPort = projectConfig.getHttpPort();
+        if (httpPort == null) {
+            httpPort = RandomUtils.nextInt(35000, 40000);
+            projectConfig.setHttpPort(httpPort);
+        }
+        if (arthasHttpPortInput != null) {
+            arthasHttpPortInput.setValue(httpPort);
+        }
+        return httpPort;
+    }
+
     private void initComboBox() {
         serverComboBox = new ComboBox<>();
         javaProcessComboBox = new ComboBox<>();
 
         // java process comboBox
-        javaProcessComboBox.setEnabled(false);
         javaProcessComboBox.addItemListener(e -> {
             JavaProcess selectedItem = (JavaProcess) javaProcessComboBox.getSelectedItem();
             if (selectedItem != null) {
                 projectConfig.setPid(selectedItem.getPid());
+                getPortOrSetRandomPort();
                 setAttachStatus(); // initComboBox
             }
         });
 
         // server comboBox
-        List<SshServer> servers = new ArrayList<>();
-        servers.add(SshServer.None);
-        servers.addAll(ConfigHelper.sshServers());
-        serverComboBox.setModel(new CollectionComboBoxModel<>(servers));
+        serverComboBox.setModel(new CollectionComboBoxModel<>(ConfigHelper.sshServers()));
         serverComboBox.addActionListener(e -> {
             SshServer selectedItem = (SshServer) serverComboBox.getSelectedItem();
             if (selectedItem == SshServer.None) {
                 return;
             }
             if (selectedItem != null) {
-                sshId = selectedItem.getId();
+                Integer newSshId = selectedItem.getId();
+                if (!Objects.equals(newSshId, sshId)) {
+                    closePreSshjConnection();
+                }
+                sshId = newSshId;
                 projectConfig.setSshId(sshId);
-
                 checkArthasToolPack();
-
-                javaProcessComboBox.setEnabled(true);
                 refreshJavaProcessComboBox();
+                setAttachStatus();
             }
         });
         // locate server
@@ -268,7 +299,6 @@ public class ClassHotReloadDialog extends DialogWrapper {
             arthasPackExist = hotReloadService.isArthasPackExist(getSshjConnection());
             if (!arthasPackExist) {
                 arthasStatusLabel.setText("Not Found");
-                arthasStatusLabel.setForeground(JBColor.RED);
             } else {
                 arthasStatusLabel.setText(hotReloadService.getArthasBootJar());
             }
@@ -278,14 +308,23 @@ public class ClassHotReloadDialog extends DialogWrapper {
     }
 
     private boolean isArthasPackNotExist() {
-        if (arthasPackExist) {
+        if (!arthasPackExist) {
+            Messages.showInfoMessage(
+                    "The server does not have the Arthas toolkit yet. Please upload it first",
+                    "Arthas Tool"
+            );
             return true;
         }
-        Messages.showInfoMessage(
-                "The server does not have the Arthas toolkit yet. Please upload it first",
-                "Arthas Tool"
-        );
         return false;
+    }
+
+    private void closePreSshjConnection() {
+        if (sshjConnection != null) {
+            sshjConnection.close();
+            sshjConnection = null;
+            project.putUserData(SSHJ_CONNECTION, null);
+            project.putUserData(JAVA_PROCESSES, null);
+        }
     }
 
     /**
@@ -332,13 +371,12 @@ public class ClassHotReloadDialog extends DialogWrapper {
             if (projectConfig.getPid() != null) {
                 int pid = projectConfig.getPid();
                 int httpPort = getHttpPort();
-                boolean attached = hotReloadService.isAttached(getSshjConnection(), pid, httpPort);
+                attached = hotReloadService.isAttached(getSshjConnection(), pid, httpPort);
+                attachedStatusTip.setText("");
                 if (attached) {
-                    attachedStatusTip.setText("Attached");
-                    attachedStatusTip.setForeground(JBColor.GREEN);
+                    attachedStatusTip.setIcon(MyIcons.Actions.Connect);
                 } else {
-                    attachedStatusTip.setText("Detached");
-                    attachedStatusTip.setForeground(JBColor.RED);
+                    attachedStatusTip.setIcon(MyIcons.Actions.LostConnect);
                 }
             }
         } catch (IOException e) {
@@ -358,13 +396,13 @@ public class ClassHotReloadDialog extends DialogWrapper {
         }
     }
 
-    public class AttachRemoteJavaProcessAction extends AnAction {
+    public class AttachRemoteJavaProcessAction extends AbstractAction {
         public AttachRemoteJavaProcessAction() {
-            super("Attach", "Attach java process", MyIcons.Actions.ATTACH);
+            super("Attach Process");
         }
 
         @Override
-        public void actionPerformed(@NotNull AnActionEvent e) {
+        public void actionPerformed(@NotNull ActionEvent e) {
             if (isArthasPackNotExist()) {
                 return;
             }
@@ -374,7 +412,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
                 if (projectConfig.getSshId() == null || projectConfig.getPid() == null) {
                     return;
                 }
-                hotReloadService.attachRemoteJavaProcess(getSshjConnection(), projectConfig.getPid(), getHttpPort());
+                hotReloadService.attachRemoteJavaProcess(project, getSshjConnection(), projectConfig.getPid(), getHttpPort());
                 setAttachStatus(); // AttachRemoteJavaProcessAction
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -397,7 +435,7 @@ public class ClassHotReloadDialog extends DialogWrapper {
                 public void run(@NotNull ProgressIndicator progressIndicator) {
                     progressIndicator.setIndeterminate(false);
                     try {
-                        hotReloadService.uploadArthasPack(getSshjConnection(), progressIndicator);
+                        hotReloadService.uploadArthasPack(project, getSshjConnection(), progressIndicator);
                         checkArthasToolPack();
                     } catch (IOException ex) {
                         progressIndicator.setFraction(1f);

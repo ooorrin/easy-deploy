@@ -1,8 +1,5 @@
 package tech.lin2j.idea.plugin.service.impl;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationGroup;
-import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.compiler.CompilerPaths;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -17,7 +14,6 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.codehaus.plexus.util.FileUtils;
 import org.jetbrains.concurrency.Promise;
 import tech.lin2j.idea.plugin.service.IHotReloadService;
-import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 import tech.lin2j.idea.plugin.uitl.FileUtil;
@@ -46,42 +42,24 @@ public class HotReloadServiceImpl implements IHotReloadService {
     static final String CURL_PATTERN = "curl -Ss -XPOST %s -d '%s'";
 
     @Override
-    public boolean isAttached(SshjConnection conn, int pid, int httpPort) throws IOException {
-        String url = String.format(ARTHAS_SERVICE_PATTERN, httpPort);
-        String curlCmd = String.format(CURL_PATTERN, url, SESSION_PATTERN);
-        String pipeCmd = curlCmd + " | awk -F 'javaPid\\\":' '{print $2}' | awk -F ',' '{print $1}'";
-        SshStatus result = conn.execute(pipeCmd);
-        if (result.isSuccess()) {
-            String remotePid = result.getMessage().replaceAll("\n", "");
-            return Objects.equals(pid + "", remotePid);
+    public boolean isArthasPackExist(SshjConnection conn) throws IOException {
+        SshStatus result = conn.execute("ls " + getArthasBootJar());
+        if (!result.isSuccess()) {
+            if (result.getMessage().contains("No such file")) {
+                return false;
+            }
+            Messages.showErrorDialog(result.getMessage(), "Check Arthas Pack");
         }
-        return false;
+        return true;
     }
 
     @Override
-    public void uploadArthasPack(SshjConnection conn) throws IOException {
-        conn.mkdirs(getToolDirectory());
-        if (isArthasPackExist(conn)) {
-            return;
-        }
-        String localPackPath = extractArthasPack();
-        if (localPackPath.isEmpty()) {
-            return;
-        }
-        conn.upload(localPackPath, getToolDirectory());
-        SshStatus unpackResult = conn.execute("cd " + getToolDirectory() + "&& tar -xzvf " + getRemotePackPath());
-        if (!unpackResult.isSuccess()) {
-            Messages.showErrorDialog(unpackResult.getMessage(), "Extract Pack");
-        }
-    }
-
-    @Override
-    public void uploadArthasPack(SshjConnection conn, ProgressIndicator indicator) throws IOException {
+    public void uploadArthasPack(Project project, SshjConnection conn, ProgressIndicator indicator) throws IOException {
         indicator.setText("Check if arthas pack exist");
         indicator.setFraction(0.1f);
         conn.mkdirs(getToolDirectory());
         if (isArthasPackExist(conn)) {
-            showBalloonMessage("Arthas Pack", "Arthas Pack already exist");
+            showBalloonMessage(project, "Arthas Pack", "Arthas Pack already exist");
             indicator.setFraction(1f);
             return;
         }
@@ -89,7 +67,7 @@ public class HotReloadServiceImpl implements IHotReloadService {
         indicator.setText("Copy to local");
         String localPackPath = extractArthasPack();
         if (localPackPath.isEmpty()) {
-            showBalloonMessage("Arthas Pack", "Copy of toolkit to local failed, please try again");
+            showBalloonMessage(project, "Arthas Pack", "Copy of toolkit to local failed, please try again");
             indicator.setFraction(1f);
             return;
         }
@@ -102,9 +80,9 @@ public class HotReloadServiceImpl implements IHotReloadService {
         indicator.setText("Extract arthas pack");
         SshStatus unpackResult = conn.execute("cd " + getToolDirectory() + "&& tar -xzvf " + getRemotePackPath());
         if (unpackResult.isSuccess()) {
-            showBalloonMessage("Arthas Pack", "Tool kit initialization successful");
+            showBalloonMessage(project, "Arthas Pack", "Tool kit initialization successful");
         } else {
-            showBalloonMessage("Arthas Pack", unpackResult.getMessage());
+            showBalloonMessage(project, "Arthas Pack", unpackResult.getMessage());
         }
         indicator.setFraction(1f);
     }
@@ -120,23 +98,50 @@ public class HotReloadServiceImpl implements IHotReloadService {
     }
 
     @Override
-    public void attachRemoteJavaProcess(SshjConnection conn, int pid, int httpPort) throws IOException {
+    public boolean isAttached(SshjConnection conn, int pid, int httpPort) throws IOException {
+        String url = String.format(ARTHAS_SERVICE_PATTERN, httpPort);
+        String curlCmd = String.format(CURL_PATTERN, url, SESSION_PATTERN);
+        String pipeCmd = curlCmd + " | awk -F 'javaPid\\\":' '{print $2}' | awk -F ',' '{print $1}'";
+        SshStatus result = conn.execute(pipeCmd);
+        if (result.isSuccess()) {
+            String remotePid = result.getMessage().replaceAll("\n", "");
+            return Objects.equals(pid + "", remotePid);
+        }
+        return false;
+    }
+
+    @Override
+    public void attachRemoteJavaProcess(Project project, SshjConnection conn, int pid, int httpPort) throws IOException {
         String arthasCmd = String.format(ATTACH_PATTERN, getArthasBootJar(), pid, httpPort + 1, httpPort);
         log.info(arthasCmd);
         SshStatus result = conn.execute(arthasCmd);
         if (result.isSuccess()) {
+            conn.mkdirs(getProcDirectory());
+            createPidFile(conn, pid, httpPort);
             String msg = String.format("Attach process [%s] successful", pid);
-            showBalloonMessage("Attach Remote Java Process", msg);
+            showBalloonMessage(project, "Attach Remote Java Process", msg);
         } else {
-            showBalloonMessage("Attach Process Failed", result.getMessage());
+            showBalloonMessage(project, "Attach Process Failed", result.getMessage());
         }
     }
 
     @Override
-    public void compileAndUploadClass(SshjConnection conn,
-                                      PsiJavaFile psiFile,
-                                      Project project,
-                                      int httpPort) {
+    public Integer getAttachedHttpPort(SshjConnection conn, int pid) throws IOException {
+        String cmd = String.format("cat %s", getProcDirectory() + pid);
+        SshStatus result = conn.execute(cmd);
+        if (result.isSuccess()) {
+            String port = result.getMessage().replaceAll("\n", "");
+            return Integer.parseInt(port);
+        }
+        return null;
+    }
+
+
+    @Override
+    public void compileAndRetransformClass(SshjConnection conn,
+                                           PsiJavaFile psiFile,
+                                           Project project,
+                                           int httpPort) {
         ProjectTaskManager instance = ProjectTaskManager.getInstance(project);
         Promise<ProjectTaskManager.Result> promise = instance.compile(psiFile.getVirtualFile());
         promise.then(result -> {
@@ -158,7 +163,7 @@ public class HotReloadServiceImpl implements IHotReloadService {
                 }
                 // 发送文件到服务器
                 String targetClass = sendClassFile(conn, module, cf.getAbsolutePath(), classPackage, classFilename);
-                requestArthasRetransform(conn, targetClass, httpPort);
+                retransform(project, conn, targetClass, httpPort);
                 break;
             }
             return result.hasErrors();
@@ -166,32 +171,35 @@ public class HotReloadServiceImpl implements IHotReloadService {
     }
 
     @Override
-    public void requestArthasRetransform(SshjConnection conn, String targetClass, int httpPort) {
-
+    public void retransform(Project project, SshjConnection conn, String targetClass, int httpPort) {
         String url = String.format(ARTHAS_SERVICE_PATTERN, httpPort);
         String arthasCmd = String.format(RETRANSFORM_DATA_PATTERN, getHotClassDirectory() + targetClass);
         String curlCmd = String.format(CURL_PATTERN, url, arthasCmd);
 
-        System.out.println(curlCmd);
+        log.info(curlCmd);
         try {
             SshStatus result = conn.execute(curlCmd);
             if (!result.isSuccess()) {
-                Messages.showErrorDialog(result.getMessage(), "Arthas Retransform");
+                showBalloonMessage(project, "Arthas Retransform Failed", result.getMessage());
             } else {
-                System.out.println("curl completed: " + result.getMessage());
+                showBalloonMessage(project, "Arthas Retransform Success", "Class update successfully");
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    @Override
+    public String getArthasBootJar() {
+        return getToolDirectory() + "arthas-bin/arthas-boot.jar";
+    }
+
     private String getToolDirectory() {
         return "/tmp/EasyDeploy/tool/";
     }
 
-    @Override
-    public String getArthasBootJar() {
-        return getToolDirectory() + "arthas-bin/arthas-boot.jar";
+    private String getProcDirectory() {
+        return "/tmp/EasyDeploy/proc/";
     }
 
     private String getHotClassDirectory() {
@@ -214,17 +222,14 @@ public class HotReloadServiceImpl implements IHotReloadService {
         }
     }
 
-    @Override
-    public boolean isArthasPackExist(SshjConnection conn) throws IOException {
-        SshStatus result = conn.execute("ls " + getArthasBootJar());
+    private void createPidFile(SshjConnection conn, int pid, int httpPort) throws IOException {
+        String cmd = String.format("echo '%s' > %s", httpPort, getProcDirectory() + pid);
+        SshStatus result = conn.execute(cmd);
         if (!result.isSuccess()) {
-            if (result.getMessage().contains("No such file")) {
-                return false;
-            }
-            Messages.showErrorDialog(result.getMessage(), "Check Arthas Pack");
+            log.error("create pid file failed: " + result.getMessage());
         }
-        return true;
     }
+
 
     private String extractArthasPack() throws IOException {
         // create directory
@@ -252,8 +257,8 @@ public class HotReloadServiceImpl implements IHotReloadService {
         return localPackPath;
     }
 
-    private void showBalloonMessage(String title, String content) {
+    private void showBalloonMessage(Project project, String title, String content) {
         PluginNotificationService service = ServiceManager.getService(PluginNotificationService.class);
-        service.showHotReloadNotification(title, content);
+        service.showHotReloadNotification(project, title, content);
     }
 }

@@ -20,6 +20,7 @@ intellij {
     version = '2024.1'
 //    type = 'IU'
     plugins = [
+            'com.intellij.java',
             "org.jetbrains.plugins.terminal",
     ]
     updateSinceUntilBuild = false

@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import tech.lin2j.idea.plugin.exception.IllegalFileTypeException;
-import tech.lin2j.idea.plugin.ui.dialog.ClassHotReloadDialog;
+import tech.lin2j.idea.plugin.ui.dialog.ClassRetransformDialog;
 
 /**
  * @author linjinjia
@@ -15,7 +15,7 @@ public class ClassHotReloadAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         try {
-            new ClassHotReloadDialog(e.getProject(), e).show();
+            new ClassRetransformDialog(e.getProject(), e).show();
         } catch (IllegalFileTypeException err) {
             Messages.showErrorDialog("Class reload only supports Java files", "File Type Error");
         }

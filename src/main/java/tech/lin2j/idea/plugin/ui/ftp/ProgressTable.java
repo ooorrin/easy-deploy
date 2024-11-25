@@ -42,13 +42,14 @@ import static tech.lin2j.idea.plugin.enums.TransferState.UPLOADING;
 public class ProgressTable extends JPanel implements ApplicationListener<FileTransferEvent> {
     private static final Logger log = Logger.getInstance(ProgressTable.class);
 
-    private static final String[] COLUMNS = {"Name", "State", "Progress", "Size", "Local", "Remote"};
+    private static final String[] COLUMNS = {"Name", "State", "Progress", "Size", "Speed", "Local", "Remote"};
     public static final int NAME_COL = 0;
     public static final int STATE_COL = 1;
     public static final int PROGRESS_COL = 2;
     public static final int SIZE_COL = 3;
-    public static final int LOCAl_COL = 4;
-    public static final int REMOTE_COL = 5;
+    public static final int SPEED_COL = 4;
+    public static final int LOCAl_COL = 5;
+    public static final int REMOTE_COL = 6;
 
     private JBTable outputTable;
     private DefaultTableModel tableModel;
@@ -164,7 +165,7 @@ public class ProgressTable extends JPanel implements ApplicationListener<FileTra
 
     private void init() {
         outputTable = new JBTable();
-        tableModel = new DefaultTableModel(new Object[0][6], COLUMNS) {
+        tableModel = new DefaultTableModel(new Object[0][7], COLUMNS) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -195,6 +196,10 @@ public class ProgressTable extends JPanel implements ApplicationListener<FileTra
         TableColumn sizeColumn = outputTable.getColumnModel().getColumn(SIZE_COL);
         sizeColumn.setMaxWidth(150);
         sizeColumn.setMinWidth(150);
+
+        TableColumn speedColumn = outputTable.getColumnModel().getColumn(SPEED_COL);
+        speedColumn.setMaxWidth(150);
+        speedColumn.setMinWidth(150);
 
         add(new JScrollPane(outputTable));
     }

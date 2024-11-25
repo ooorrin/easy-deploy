@@ -2,6 +2,7 @@ package tech.lin2j.idea.plugin.ssh;
 
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author linjinjia
@@ -29,6 +30,10 @@ public interface SshConnection {
      */
     void download(String remote, String dest) throws IOException;
 
+    void scpUpload(String local, String dest) throws IOException;
+
+    void scpDownload(String remote, String dest) throws IOException;
+
     /**
      * execute command </br>
      * note that command like 'tail -f' will block the thread
@@ -38,6 +43,8 @@ public interface SshConnection {
      * caller to discern
      */
     SshStatus execute(String cmd) throws IOException;
+
+    void executeAsync(CommandLog commandLog, String cmd, AtomicBoolean cancel);
 
     /**
      * Create a directory, automatically creating parent directories

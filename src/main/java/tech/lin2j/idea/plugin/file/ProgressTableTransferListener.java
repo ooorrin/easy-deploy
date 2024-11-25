@@ -22,6 +22,8 @@ public class ProgressTableTransferListener implements TransferListener {
     private final ConsoleView consoleView;
     private final ProgressCell progressCell;
 
+    private final FileTransferSpeed fileTransferSpeed = new FileTransferSpeed();
+
     public ProgressTableTransferListener(String relPath, ProgressCell cell, ConsoleView consoleView) {
         if (!relPath.endsWith("/")) {
             relPath += "/";
@@ -42,7 +44,10 @@ public class ProgressTableTransferListener implements TransferListener {
         print("Transfer file: " + path + ", Size: " + StringUtil.formatFileSize(size) + "\n");
         AtomicDouble prePercent = new AtomicDouble(0);
         AtomicLong preTransferred = new AtomicLong();
+        fileTransferSpeed.start();
         return transferred -> {
+            String speed = fileTransferSpeed.accept(transferred);
+
             long finalSize = size;
             long finalTransferred = transferred;
 
@@ -67,6 +72,8 @@ public class ProgressTableTransferListener implements TransferListener {
                 prePercent.set(percent);
                 progressCell.getColorProgressBar().setFraction(percent);
                 tableModel.fireTableCellUpdated(row, ProgressTable.PROGRESS_COL);
+                // speed
+                tableModel.setValueAt(speed, row, ProgressTable.SPEED_COL);
             }
 
             // update log progress of log panel
@@ -75,20 +82,20 @@ public class ProgressTableTransferListener implements TransferListener {
                 fileProgress = transferred / (double) size;
             }
             boolean fileCompleted = Math.abs(1 - fileProgress) < 1e-6;
-            printProgress((int) (fileProgress * 100), fileCompleted);
+            printProgress((int) (fileProgress * 100), fileCompleted, speed);
 
         };
     }
 
-    private void printProgress(int complete, boolean completed) {
+    private void printProgress(int complete, boolean completed, String speed) {
         StringBuilder sb = new StringBuilder("[");
         Stream.generate(() -> '#').limit(complete).forEach(sb::append);
         Stream.generate(() -> '_').limit(100 - complete).forEach(sb::append);
         sb.append("] ");
         if (completed) {
-            sb.append("complete\n");
+            sb.append("complete, speed: ").append(speed).append("\n");
         } else {
-            sb.append(complete).append("%");
+            sb.append(complete).append("% , speed: ").append(speed);
         }
         print("\r");
         print(sb.toString());

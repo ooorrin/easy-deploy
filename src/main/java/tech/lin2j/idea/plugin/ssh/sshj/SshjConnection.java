@@ -1,5 +1,6 @@
 package tech.lin2j.idea.plugin.ssh.sshj;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
@@ -8,13 +9,16 @@ import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.sftp.SFTPException;
 import net.schmizz.sshj.xfer.TransferListener;
+import tech.lin2j.idea.plugin.model.ConfigHelper;
+import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshConnection;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.Deque;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author linjinjia
@@ -52,6 +56,10 @@ public class SshjConnection implements SshConnection {
 
     @Override
     public void upload(String local, String dest) throws IOException {
+        if (ConfigHelper.isSCPTransferMode()) {
+            scpUpload(local, dest);
+            return;
+        }
         log.debug("Upload file from local to remote directory");
         File localFile = new File(local);
         if (localFile.exists() && localFile.canRead()) {
@@ -74,7 +82,32 @@ public class SshjConnection implements SshConnection {
 
     @Override
     public void download(String remote, String dest) throws IOException {
+        if (ConfigHelper.isSCPTransferMode()) {
+            scpDownload(remote, dest);
+            return;
+        }
         sftpClient.get(remote, dest);
+    }
+
+    @Override
+    public void scpUpload(String local, String dest) throws IOException {
+        File localFile = new File(local);
+        if (localFile.exists() && localFile.canRead()) {
+            SshStatus checkFileExist = execute("ls " + dest);
+            if (!checkFileExist.isSuccess()) {
+                if (checkFileExist.getMessage().contains("No such file")) {
+                    execute("mkdir -p " + dest);
+                }
+            }
+            sshClient.newSCPFileTransfer().upload(local, dest);
+        } else {
+            throw new FileNotFoundException("local file not found: " + local);
+        }
+    }
+
+    @Override
+    public void scpDownload(String remote, String dest) throws IOException {
+        sshClient.newSCPFileTransfer().download(remote, dest);
     }
 
     @Override
@@ -93,6 +126,49 @@ public class SshjConnection implements SshConnection {
         } finally {
             close(session);
         }
+    }
+
+    @Override
+    public void executeAsync(CommandLog commandLog, String cmd, AtomicBoolean cancel) {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Session session = this.sshClient.startSession();
+            try {
+                Session.Command command = session.exec(cmd);
+                InputStream std = command.getInputStream();
+                InputStream err = command.getErrorStream();
+                for (; ; ) {
+                    if (cancel.get()) {
+                        break;
+                    }
+                    BufferedReader stdReader = new BufferedReader(new InputStreamReader(std));
+                    BufferedReader errReader = new BufferedReader(new InputStreamReader(err));
+
+                    String msg;
+                    while ((msg = stdReader.readLine()) != null) {
+                        commandLog.info(msg);
+                        commandLog.info("\n");
+                    }
+
+                    while ((msg = errReader.readLine()) != null) {
+                        commandLog.error(msg);
+                        commandLog.error("\n");
+                    }
+
+                    if (session.isOpen()) {
+                        TimeUnit.MILLISECONDS.sleep(50);
+                        continue;
+                    }
+
+                    if (!(std.available() > 0 || err.available() > 0)) {
+                        break;
+                    }
+                }
+            } finally {
+                close(session);
+            }
+            return null;
+        });
+        ApplicationManager.getApplication().executeOnPooledThread(task);
     }
 
     @Override

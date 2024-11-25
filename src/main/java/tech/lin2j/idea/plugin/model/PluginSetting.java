@@ -5,6 +5,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.ColorUtil;
 import tech.lin2j.idea.plugin.enums.I18nType;
 import tech.lin2j.idea.plugin.enums.SFTPAction;
+import tech.lin2j.idea.plugin.enums.TransferMode;
 import tech.lin2j.idea.plugin.uitl.FileUtil;
 import tech.lin2j.idea.plugin.uitl.ImportExportUtil;
 
@@ -24,6 +25,7 @@ public class PluginSetting {
     private boolean sshKeepalive;
     private Integer heartbeatInterval;
 
+    private Integer transferMode;
     private boolean updateCheck;
 
     // SFTP
@@ -109,6 +111,17 @@ public class PluginSetting {
 
     public void setI18nType(Integer i18nType) {
         this.i18nType = i18nType;
+    }
+
+    public Integer getTransferMode() {
+        if (transferMode == null) {
+            transferMode = TransferMode.SFTP.getType();
+        }
+        return transferMode;
+    }
+
+    public void setTransferMode(Integer transferMode) {
+        this.transferMode = transferMode;
     }
 
     public Integer getHeartbeatInterval() {

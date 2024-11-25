@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.lin2j.idea.plugin.enums.I18nType;
+import tech.lin2j.idea.plugin.enums.TransferMode;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.ExportOptions;
 import tech.lin2j.idea.plugin.model.PluginSetting;
@@ -44,6 +45,7 @@ public class GeneralConfigurable implements SearchableConfigurable, Configurable
     private final ExportOptions exportOptions = setting.getExportOptions().clone();
 
     private ComboBox<I18nType> languageTypes;
+    private ComboBox<TransferMode> transferModes;
     private JBCheckBox sshKeepalive;
     private JSpinner heartbeatInterval;
     private TextFieldWithBrowseButton defaultExportImportPath;
@@ -77,9 +79,11 @@ public class GeneralConfigurable implements SearchableConfigurable, Configurable
     @Override
     public boolean isModified() {
         I18nType selectedI18Type = languageTypes.getItemAt(languageTypes.getSelectedIndex());
+        TransferMode selectedTransferMode = transferModes.getItemAt(transferModes.getSelectedIndex());
         return !Objects.equals(sshKeepalive.isSelected(), setting.isSshKeepalive())
                 || !Objects.equals(heartbeatInterval.getValue(), setting.getHeartbeatInterval())
                 || !Objects.equals(selectedI18Type.getType(), setting.getI18nType())
+                || !Objects.equals(selectedTransferMode.getType(), setting.getTransferMode())
                 || !Objects.equals(exportOptions, setting.getExportOptions())
                 || !Objects.equals(defaultExportImportPath.getText(), setting.getDefaultExportImportPath());
 
@@ -88,9 +92,11 @@ public class GeneralConfigurable implements SearchableConfigurable, Configurable
     @Override
     public void apply() {
         I18nType selectedI18Type = languageTypes.getItemAt(languageTypes.getSelectedIndex());
+        TransferMode selectedTransferMode = transferModes.getItemAt(transferModes.getSelectedIndex());
         setting.setSshKeepalive(sshKeepalive.isSelected());
         setting.setHeartbeatInterval((int) heartbeatInterval.getValue());
         setting.setI18nType(selectedI18Type.getType());
+        setting.setTransferMode(selectedTransferMode.getType());
         setting.setExportOptions(exportOptions);
         setting.setDefaultExportImportPath(defaultExportImportPath.getText());
     }
@@ -115,6 +121,7 @@ public class GeneralConfigurable implements SearchableConfigurable, Configurable
         String title = MessagesBundle.getText("setting.general.ssh.title");
         String keepaliveText = MessagesBundle.getText("setting.general.ssh.keepalive");
         String heartbeatText = MessagesBundle.getText("setting.general.ssh.keepalive.heart-beat");
+        String transferModeText = MessagesBundle.getText("setting.general.ssh.transfer-mode");
 
         sshKeepalive = new JBCheckBox();
         sshKeepalive.setSelected(setting.isSshKeepalive());
@@ -124,9 +131,14 @@ public class GeneralConfigurable implements SearchableConfigurable, Configurable
         heartbeatInterval = new JSpinner(new SpinnerNumberModel(interval, 10, 3600, 10));
         heartbeatInterval.setEnabled(setting.isSshKeepalive());
 
+        transferModes = new ComboBox<>();
+        transferModes.setModel(new CollectionComboBoxModel<>(Arrays.asList(TransferMode.values())));
+        transferModes.setSelectedItem(TransferMode.getByType(setting.getTransferMode()));
+
         JPanel panel = FormBuilder.createFormBuilder()
                 .addLabeledComponent(keepaliveText, sshKeepalive)
                 .addLabeledComponent(heartbeatText, heartbeatInterval)
+                .addLabeledComponent(transferModeText, transferModes)
                 .getPanel();
         panel.setBorder(new IdeaTitledBorder(title, 0, JBUI.emptyInsets()));
 

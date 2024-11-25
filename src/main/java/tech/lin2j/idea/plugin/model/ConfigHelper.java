@@ -2,6 +2,7 @@ package tech.lin2j.idea.plugin.model;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import tech.lin2j.idea.plugin.enums.TransferMode;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 
 import java.util.ArrayList;
@@ -60,6 +61,14 @@ public class ConfigHelper {
 
     public static int language() {
         return pluginSetting().getI18nType();
+    }
+
+    public static int transferMode() {
+        return pluginSetting().getTransferMode();
+    }
+
+    public static boolean isSCPTransferMode() {
+        return Objects.equals(pluginSetting().getTransferMode(), TransferMode.SCP.getType());
     }
 
     public static SshServer getSshServerById(int id) {

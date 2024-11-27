@@ -9,8 +9,8 @@ import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 import tech.lin2j.idea.plugin.event.ApplicationContext;
 import tech.lin2j.idea.plugin.event.listener.UploadProfileSelectedListener;
-import tech.lin2j.idea.plugin.module.CommandExecuteView;
-import tech.lin2j.idea.plugin.module.DeployConsoleView;
+import tech.lin2j.idea.plugin.ui.module.ConsoleLogView;
+import tech.lin2j.idea.plugin.ui.module.DashboardView;
 
 /**
  * @author linjinjia
@@ -22,11 +22,11 @@ public class DeployConsoleToolWindowFactory implements ToolWindowFactory {
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         ContentFactory contentFactory = ContentFactory.getInstance();
         // deploy tab
-        DeployConsoleView deployConsoleView = new DeployConsoleView(project);
-        Content deploy = contentFactory.createContent(deployConsoleView, "Dashboard", false);
+        DashboardView dashboardView = new DashboardView(project);
+        Content deploy = contentFactory.createContent(dashboardView, "Dashboard", false);
         toolWindow.getContentManager().addContent(deploy);
         // messages tab
-        CommandExecuteView commandExecuteView = new CommandExecuteView(project);
+        ConsoleLogView commandExecuteView = new ConsoleLogView(project);
         Content messages = contentFactory.createContent(commandExecuteView, "Console", false);
         toolWindow.getContentManager().addContent(messages);
 
@@ -41,8 +41,7 @@ public class DeployConsoleToolWindowFactory implements ToolWindowFactory {
             }
         });
 
-        ApplicationContext.getApplicationContext().addApplicationListener(deployConsoleView.getConsoleUi());
+        ApplicationContext.getApplicationContext().addApplicationListener(dashboardView.getConsoleUi());
         ApplicationContext.getApplicationContext().addApplicationListener(new UploadProfileSelectedListener());
-        ApplicationContext.getApplicationContext().addApplicationListener(commandExecuteView.getCommandLogViewer());
     }
 }

@@ -4,19 +4,19 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 
 public class ConsoleCommandLog implements CommandLog {
-    private ConsoleView console;
+    private final ConsoleView console;
 
     public ConsoleCommandLog(ConsoleView console) {
         this.console = console;
     }
 
     @Override
-    public void info(String msg) {
-        console.print(msg, ConsoleViewContentType.NORMAL_OUTPUT);
+    public ConsoleView getConsole() {
+        return console;
     }
 
     @Override
-    public void error(String msg) {
-        console.print(msg, ConsoleViewContentType.ERROR_OUTPUT);
+    public void print(String msg, ConsoleViewContentType contentType) {
+        console.print(msg, contentType);
     }
 }

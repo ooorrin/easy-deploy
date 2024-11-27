@@ -33,7 +33,7 @@ public class CustomTtyConnectorFactory {
                 SshjConnection connection = SshConnectionManager.makeSshjConnection(server);
                 return new SshjTtyConnector(connection, workingDirectory);
             } catch (IOException e) {
-                LOG.error("Error connecting server: " + e.getMessage());
+                LOG.error("Error connecting server: {}", e.getMessage());
                 throw new RemoteSdkException("Error connecting server: " + e.getMessage(), e);
             }
         }

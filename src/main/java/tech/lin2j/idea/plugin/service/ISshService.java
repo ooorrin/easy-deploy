@@ -1,8 +1,8 @@
 package tech.lin2j.idea.plugin.service;
 
-import com.intellij.openapi.project.Project;
 import net.schmizz.sshj.xfer.TransferListener;
-import tech.lin2j.idea.plugin.file.FileFilter;
+import tech.lin2j.idea.plugin.file.filter.FileFilter;
+import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
 
@@ -31,6 +31,8 @@ public interface ISshService {
      */
     SshStatus execute(SshServer sshServer, String command);
 
+    void executeAsync(CommandLog commandLog, SshServer sshServer, String command);
+
     /**
      * get file from remote server
      *
@@ -41,32 +43,16 @@ public interface ISshService {
      */
     SshStatus download(SshServer sshServer, String remoteFile, String localFile);
 
-    SshStatus upload(FileFilter filter, SshServer server,
-                     String localFile, String remoteDir,
-                     TransferListener listener);
-
-    /**
-     * upload file to remote server
-     *
-     * @param sshServer server information
-     * @param localFile local file absolute path,
-     *                  if it is a directory, then
-     *                  upload all files in this directory
-     * @param remoteDir remote file absolute path
-     * @param exclude   the suffix name that needs to be excluded
-     *                  during the uploading process. Only when
-     *                  uploading the folder will it be used
-     * @return upload result
-     */
-    SshStatus upload(Project project, SshServer sshServer, String localFile, String remoteDir, String exclude);
+    SshStatus upload(FileFilter filter, SshServer server, String localFile,
+                     String remoteDir, TransferListener listener);
 
 
     /**
-     * test whether the remote target directory is exist.
+     * test whether the remote target directory is existed.
      *
      * @param server          ssh server information
      * @param remoteTargetDir remote target directory
-     * @return return true if the remote target directory is exist, or return false
+     * @return return true if the remote target directory is existed, or return false
      */
     SshStatus isDirExist(SshServer server, String remoteTargetDir);
 

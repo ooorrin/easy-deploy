@@ -13,7 +13,8 @@ public class FileTransferSpeed {
     private String speed = "0 B/s";
 
     public FileTransferSpeed() {
-
+        lastUpdateTime = System.currentTimeMillis();
+        lastTransferred = 0;
     }
 
     public void start() {

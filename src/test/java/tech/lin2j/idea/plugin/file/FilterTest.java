@@ -1,6 +1,7 @@
 package tech.lin2j.idea.plugin.file;
 
 import org.junit.Test;
+import tech.lin2j.idea.plugin.file.filter.ExtensionFilter;
 
 /**
  * @author linjinjia

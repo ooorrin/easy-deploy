@@ -81,9 +81,6 @@ public class DeployRunProfileState extends CommandLineState {
                     }
                 }
 
-                console.print("[INFO] ", ConsoleViewContentType.LOG_INFO_OUTPUT);
-                console.print("Finished at: " + LocalDateTime.now(), ConsoleViewContentType.NORMAL_OUTPUT);
-
                 process.destroyProcess();
             }
         };

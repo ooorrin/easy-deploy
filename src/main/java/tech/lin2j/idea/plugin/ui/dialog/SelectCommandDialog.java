@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.ActionToolbarPosition;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.text.StringUtil;
@@ -42,7 +43,7 @@ import java.util.Objects;
  * @author linjinjia
  * @date 2024/5/4 22:38
  */
-public class SelectCommandDialog extends DialogWrapper implements ApplicationListener<CommandAddEvent>  {
+public class SelectCommandDialog extends DialogWrapper implements ApplicationListener<CommandAddEvent> {
     private final JPanel root;
     private JBTextField showInput;
     private JBList<Command> commandList;
@@ -177,7 +178,7 @@ public class SelectCommandDialog extends DialogWrapper implements ApplicationLis
         if (needPassword && StringUtil.isEmpty(server.getPassword())) {
             return;
         }
-        CommandUtil.executeAndShowMessages(project, cmd, null, server, this);
+        CommandUtil.executeCommand(project, cmd, server, this);
     }
 
     private class RunCommandAction extends AnAction {

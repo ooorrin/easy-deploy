@@ -35,7 +35,7 @@ public class ConsoleTransferListener implements TransferListener {
     public StreamCopier.Listener file(final String name, final long size) {
         String path = relPath + name;
         info("Transfer file: " + path + ", Size: " + StringUtil.formatFileSize(size) + "\n");
-        fileTransferSpeed.start();
+//        fileTransferSpeed.start();
         return transferred -> {
             String speed = fileTransferSpeed.accept(transferred);
 

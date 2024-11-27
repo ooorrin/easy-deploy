@@ -44,7 +44,6 @@ public class ProgressTableTransferListener implements TransferListener {
         print("Transfer file: " + path + ", Size: " + StringUtil.formatFileSize(size) + "\n");
         AtomicDouble prePercent = new AtomicDouble(0);
         AtomicLong preTransferred = new AtomicLong();
-        fileTransferSpeed.start();
         return transferred -> {
             String speed = fileTransferSpeed.accept(transferred);
 

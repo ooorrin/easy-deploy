@@ -10,11 +10,7 @@ import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
-import com.intellij.openapi.progress.util.ProgressIndicatorBase;
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -28,7 +24,6 @@ import tech.lin2j.idea.plugin.runner.process.ListProcessHandler;
 import tech.lin2j.idea.plugin.runner.process.UploadProcessHandler;
 import tech.lin2j.idea.plugin.ssh.SshUploadTask;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,7 +37,6 @@ public class ParallelDeployRunProfileState extends CommandLineState {
     private final List<String> deployProfiles;
     private final Executor executor;
     private final ExecutionEnvironment environment;
-    private final Project project;
 
     protected ParallelDeployRunProfileState(Executor executor,
                                             ExecutionEnvironment environment,
@@ -51,7 +45,6 @@ public class ParallelDeployRunProfileState extends CommandLineState {
         this.deployProfiles = deployProfiles;
         this.executor = executor;
         this.environment = environment;
-        this.project = environment.getProject();
     }
 
 
@@ -109,11 +102,11 @@ public class ParallelDeployRunProfileState extends CommandLineState {
         // create process handler
         SshUploadTask uploadTask = new SshUploadTask(console, deployProfile);
         UploadProcessHandler processHandler = new UploadProcessHandler();
-        processHandler.setName(configurationName + " [" +uploadTask.getTaskName() + "]");
+        processHandler.setName(configurationName + " [" + uploadTask.getTaskName() + "]");
 
         // execute
-        Task.Backgroundable task = new BackgroundUploadTask(uploadTask, console, processHandler);
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, new ProgressIndicatorBase());
+        Runnable task = new BackgroundUploadTask(uploadTask, console, processHandler);
+        ApplicationManager.getApplication().executeOnPooledThread(task);
 
         // attach
         console.attachToProcess(processHandler);
@@ -124,15 +117,13 @@ public class ParallelDeployRunProfileState extends CommandLineState {
     private UploadProcessHandler createNopProcessHandler() throws ExecutionException {
         ConsoleView console = this.createConsole(executor);
         if (console == null) {
-            throw new ExecutionException("create console view failed");
+            throw new ExecutionException("Create console view failed");
         }
         UploadProcessHandler processHandler = new UploadProcessHandler();
         console.attachToProcess(processHandler);
         processHandler.setConsole(console);
 
         processHandler.notifyProcessTerminated(0);
-        console.print("[INFO] ", ConsoleViewContentType.LOG_INFO_OUTPUT);
-        console.print("Finished at: " + LocalDateTime.now(), ConsoleViewContentType.NORMAL_OUTPUT);
 
         return processHandler;
     }
@@ -150,7 +141,7 @@ public class ParallelDeployRunProfileState extends CommandLineState {
         }
     }
 
-    private class BackgroundUploadTask extends Task.Backgroundable {
+    private class BackgroundUploadTask implements Runnable {
 
         private final SshUploadTask uploadTask;
         private final ConsoleView console;
@@ -159,19 +150,15 @@ public class ParallelDeployRunProfileState extends CommandLineState {
         public BackgroundUploadTask(SshUploadTask uploadTask,
                                     ConsoleView console,
                                     UploadProcessHandler processHandler) {
-            super(project, "Upload to Host", false);
             this.uploadTask = uploadTask;
             this.console = console;
             this.processHandler = processHandler;
         }
 
         @Override
-        public void run(@NotNull ProgressIndicator indicator) {
+        public void run() {
             try {
                 uploadTask.run();
-
-                console.print("[INFO] ", ConsoleViewContentType.LOG_INFO_OUTPUT);
-                console.print("Finished at: " + LocalDateTime.now(), ConsoleViewContentType.NORMAL_OUTPUT);
             } catch (Exception e) {
                 console.print(e.getMessage() + "\n", ConsoleViewContentType.ERROR_OUTPUT);
             } finally {

@@ -9,12 +9,19 @@ import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.sftp.SFTPException;
 import net.schmizz.sshj.xfer.TransferListener;
+import net.schmizz.sshj.xfer.scp.SCPFileTransfer;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshConnection;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.time.LocalDateTime;
 import java.util.Deque;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -31,11 +38,15 @@ public class SshjConnection implements SshConnection {
     private final Deque<SSHClient> clients;
     private final SSHClient sshClient;
     private final SFTPClient sftpClient;
+    private SCPFileTransfer scpFileTransfer;
 
     public SshjConnection(Deque<SSHClient> clients) throws IOException {
         this.clients = clients;
         this.sshClient = clients.getLast();
         this.sftpClient = sshClient.newSFTPClient();
+        if (ConfigHelper.isSCPTransferMode()) {
+            scpFileTransfer = sshClient.newSCPFileTransfer();
+        }
     }
 
     public void setTransferListener(TransferListener transferListener) {
@@ -43,6 +54,9 @@ public class SshjConnection implements SshConnection {
             return;
         }
         sftpClient.getFileTransfer().setTransferListener(transferListener);
+        if (ConfigHelper.isSCPTransferMode()) {
+            scpFileTransfer.setTransferListener(transferListener);
+        }
     }
 
     public SSHClient getSshClient() {
@@ -99,7 +113,7 @@ public class SshjConnection implements SshConnection {
                     execute("mkdir -p " + dest);
                 }
             }
-            sshClient.newSCPFileTransfer().upload(local, dest);
+            scpFileTransfer.upload(local, dest);
         } else {
             throw new FileNotFoundException("local file not found: " + local);
         }
@@ -107,7 +121,7 @@ public class SshjConnection implements SshConnection {
 
     @Override
     public void scpDownload(String remote, String dest) throws IOException {
-        sshClient.newSCPFileTransfer().download(remote, dest);
+        scpFileTransfer.download(remote, dest);
     }
 
     @Override
@@ -144,14 +158,12 @@ public class SshjConnection implements SshConnection {
                     BufferedReader errReader = new BufferedReader(new InputStreamReader(err));
 
                     String msg;
-                    while ((msg = stdReader.readLine()) != null) {
-                        commandLog.info(msg);
-                        commandLog.info("\n");
+                    while ((msg = errReader.readLine()) != null) {
+                        commandLog.println(msg);
                     }
 
-                    while ((msg = errReader.readLine()) != null) {
-                        commandLog.error(msg);
-                        commandLog.error("\n");
+                    while ((msg = stdReader.readLine()) != null) {
+                        commandLog.println(msg);
                     }
 
                     if (session.isOpen()) {
@@ -165,6 +177,7 @@ public class SshjConnection implements SshConnection {
                 }
             } finally {
                 close(session);
+                commandLog.info("Finished at: " + LocalDateTime.now());
             }
             return null;
         });

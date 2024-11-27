@@ -1,4 +1,4 @@
-package tech.lin2j.idea.plugin.file;
+package tech.lin2j.idea.plugin.file.filter;
 
 import java.io.IOException;
 

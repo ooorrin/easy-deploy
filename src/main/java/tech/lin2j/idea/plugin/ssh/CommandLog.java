@@ -1,8 +1,33 @@
 package tech.lin2j.idea.plugin.ssh;
 
+import com.intellij.execution.ui.ConsoleView;
+import com.intellij.execution.ui.ConsoleViewContentType;
+import com.intellij.openapi.util.Key;
+
 public interface CommandLog {
+    Key<CommandLog> COMMAND_LOG_KEY = Key.create("ProjectCommandLog");
 
-    void info(String msg);
+    ConsoleView getConsole();
 
-    void error(String msg);
+    void print(String msg, ConsoleViewContentType contentType);
+
+    default void info(String msg) {
+        print("[INFO] ", ConsoleViewContentType.LOG_INFO_OUTPUT);
+        if (msg != null && !msg.endsWith("\n")) {
+            msg += "\n";
+        }
+        print(msg, ConsoleViewContentType.NORMAL_OUTPUT);
+    }
+
+    default void println(String msg) {
+        print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+    }
+
+    default void error(String msg) {
+        print("[ERROR] ", ConsoleViewContentType.LOG_ERROR_OUTPUT);
+        if (msg != null && !msg.endsWith("\n")) {
+            msg += "\n";
+        }
+        print(msg, ConsoleViewContentType.ERROR_OUTPUT);
+    }
 }

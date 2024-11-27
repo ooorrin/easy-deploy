@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -244,7 +245,7 @@ public class ClassRetransformDialog extends DialogWrapper {
                 JBUI.emptyInsets(), 0, 0));
     }
 
-    private void setData() {
+    public void setData() {
         if (sshId == null) {
             new SelectServerDialog(project).show();
             sshId = projectConfig.getSshId();

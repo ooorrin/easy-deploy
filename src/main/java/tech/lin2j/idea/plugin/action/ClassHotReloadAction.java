@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 import tech.lin2j.idea.plugin.exception.IllegalFileTypeException;
 import tech.lin2j.idea.plugin.ui.dialog.ClassRetransformDialog;
 
+import javax.swing.SwingUtilities;
+
 /**
  * @author linjinjia
  * @date 2024/10/20 15:31

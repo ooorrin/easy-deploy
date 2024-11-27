@@ -1,18 +1,17 @@
 package tech.lin2j.idea.plugin.service.impl;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import net.schmizz.sshj.xfer.TransferListener;
-import tech.lin2j.idea.plugin.file.EventFileFilterAdapter;
-import tech.lin2j.idea.plugin.file.ExtensionFilter;
-import tech.lin2j.idea.plugin.file.FileFilter;
+import tech.lin2j.idea.plugin.file.filter.FileFilter;
 import tech.lin2j.idea.plugin.service.ISshService;
+import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author linjinjia
@@ -52,6 +51,18 @@ public class SshjSshService implements ISshService {
             return new SshStatus(false, e.getMessage());
         } finally {
             close(sshjConnection);
+        }
+    }
+
+    @Override
+    public void executeAsync(CommandLog commandLog, SshServer sshServer, String command) {
+        SshjConnection sshjConnection = null;
+        try {
+            sshjConnection = SshConnectionManager.makeSshjConnection(sshServer);
+            sshjConnection.executeAsync(commandLog, command, new AtomicBoolean(false));
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            commandLog.error(e.getMessage());
         }
     }
 
@@ -103,13 +114,6 @@ public class SshjSshService implements ISshService {
             close(sshjConnection);
         }
         return status;
-    }
-
-    @Override
-    public SshStatus upload(Project project, SshServer sshServer, String localFile, String remoteDir, String exclude) {
-        String cmd = "upload [" + localFile + "] to [" + remoteDir + "]";
-        FileFilter filter = new EventFileFilterAdapter(project, new ExtensionFilter(exclude), sshServer, cmd);
-        return upload(filter, sshServer, localFile, remoteDir, null);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package tech.lin2j.idea.plugin.ui.dialog;
 
 import com.google.gson.Gson;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -28,15 +29,8 @@ import tech.lin2j.idea.plugin.uitl.CommandUtil;
 import tech.lin2j.idea.plugin.uitl.MessagesBundle;
 import tech.lin2j.idea.plugin.uitl.UiUtil;
 
-import javax.swing.AbstractAction;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -48,7 +42,7 @@ import static tech.lin2j.idea.plugin.ui.render.CommandColoredListCellRenderer.TE
  * @author linjinjia
  * @date 2024/5/5 00:16
  */
-public class UploadProfileDialog extends DialogWrapper implements ApplicationListener<UploadProfileAddEvent>  {
+public class UploadProfileDialog extends DialogWrapper implements ApplicationListener<UploadProfileAddEvent> {
     private final JPanel root;
     private JPanel profileContainer;
     private ComboBox<UploadProfile> profileBox;
@@ -114,7 +108,7 @@ public class UploadProfileDialog extends DialogWrapper implements ApplicationLis
             return;
         }
 
-        CommandUtil.executeAndShowMessages(project, null, profile, sshServer, this);
+        CommandUtil.executeUpload(project, profile, sshServer, this);
         ApplicationContext.getApplicationContext().publishEvent(new UploadProfileSelectedEvent(profile));
 
         super.doOKAction();

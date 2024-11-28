@@ -1,10 +1,6 @@
 package tech.lin2j.idea.plugin.ui.dialog;
 
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionToolbar;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -37,22 +33,15 @@ import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.exception.RemoteSdkException;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
+import tech.lin2j.idea.plugin.uitl.WebBrowseUtil;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -105,8 +94,8 @@ public class ClassRetransformDialog extends DialogWrapper {
         root = FormBuilder.createFormBuilder()
                 .setVerticalGap(8)
                 .addLabeledComponent("Remote server", serverComboBox)
+                .addLabeledComponent("Remote tool pack", arthasPackContainer)
                 .addLabeledComponent("Remote process", processRefreshContainer)
-                .addLabeledComponent("Remote arthas pack", arthasPackContainer)
                 .addLabeledComponent("Arthas HTTP Port", processBindContainer)
                 .addLabeledComponent("Target java class", targetClassFile)
                 .getPanel();
@@ -115,8 +104,6 @@ public class ClassRetransformDialog extends DialogWrapper {
         setOKButtonText("Retransform");
         setSize(600, 0);
         init();
-
-        setData();
     }
 
     @Override
@@ -134,8 +121,8 @@ public class ClassRetransformDialog extends DialogWrapper {
     }
 
     @Override
-    protected @Nullable String getHelpId() {
-        return "hotReloadWebHelper";
+    protected void doHelpAction() {
+        WebBrowseUtil.browse("https://www.lin2j.tech/md/easy-deploy/brief.html");
     }
 
     @Override
@@ -143,7 +130,6 @@ public class ClassRetransformDialog extends DialogWrapper {
         if (isArthasPackNotExist()) {
             return;
         }
-
         try {
             PsiFile data = event.getData(CommonDataKeys.PSI_FILE);
             if (data instanceof PsiJavaFile javaFile) {
@@ -195,10 +181,8 @@ public class ClassRetransformDialog extends DialogWrapper {
                 }
                 sshId = newSshId;
                 projectConfig.setSshId(sshId);
-                checkArthasToolPack();
-                refreshJavaProcessComboBox();
-                getPortOrSetRandomPort();
-                setAttachStatus(); // server ComboBox listener
+
+                setData();
             }
         });
 
@@ -207,8 +191,10 @@ public class ClassRetransformDialog extends DialogWrapper {
             JavaProcess selectedItem = (JavaProcess) javaProcessComboBox.getSelectedItem();
             if (selectedItem != null) {
                 projectConfig.setPid(selectedItem.getPid());
-                getPortOrSetRandomPort();
-                setAttachStatus(); // java process ComboBox listener
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    getPortOrSetRandomPort();
+                    setAttachStatus(); // java process ComboBox listener
+                });
             }
         });
     }
@@ -252,17 +238,32 @@ public class ClassRetransformDialog extends DialogWrapper {
             if (sshId == null) {
                 return;
             }
+            SshServer selected = ConfigHelper.getSshServerById(sshId);
+            // trigger action listener
+            serverComboBox.setSelectedItem(selected);
+        } else {
+            ProgressManager.getInstance().run(new Task.Backgroundable(project, "Load data") {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    indicator.setIndeterminate(true);
+                    try {
+                        indicator.setText("Connect server");
+                        getSshjConnection();
+                    } catch (RemoteSdkException | IOException e) {
+                        notificationService.showNotification(project, "Connection Error", e.getMessage());
+                        return;
+                    }
+                    indicator.setText("Check arthas tool pack");
+                    checkArthasToolPack();
+                    indicator.setText("Fetch remote java process");
+                    refreshJavaProcessComboBox();
+                    indicator.setText("Get or set random port");
+                    getPortOrSetRandomPort();
+                    indicator.setText("Check process attach status");
+                    setAttachStatus(); // setData
+                }
+            });
         }
-        try {
-            getSshjConnection();
-        } catch (RemoteSdkException | IOException e) {
-            notificationService.showHotReloadNotification(project, "Connection Error", e.getMessage());
-            return;
-        }
-        refreshJavaProcessComboBox();
-        checkArthasToolPack();
-        getPortOrSetRandomPort();
-        setAttachStatus(); // setData
     }
 
     private int getHttpPort() {
@@ -384,6 +385,9 @@ public class ClassRetransformDialog extends DialogWrapper {
                     attachedStatus.setText("Process not found");
                     attachedStatus.setForeground(JBColor.RED);
                 }
+            } else {
+                attachedStatus.setText("Waiting for selection process");
+                attachedStatus.setForeground(JBColor.RED);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -414,16 +418,22 @@ public class ClassRetransformDialog extends DialogWrapper {
                 return;
             }
 
-            try {
-                assert projectConfig != null;
-                if (projectConfig.getSshId() == null || projectConfig.getPid() == null) {
-                    return;
-                }
-                hotReloadService.attachRemoteJavaProcess(project, getSshjConnection(), projectConfig.getPid(), getHttpPort());
-                setAttachStatus(); // AttachRemoteJavaProcessAction
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
+            assert projectConfig != null;
+            if (projectConfig.getSshId() == null || projectConfig.getPid() == null) {
+                return;
             }
+            ProgressManager.getInstance().run(new Task.Backgroundable(project, "Attach process") {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    indicator.setIndeterminate(true);
+                    try {
+                        hotReloadService.attachRemoteJavaProcess(project, getSshjConnection(), projectConfig.getPid(), getHttpPort());
+                        setAttachStatus(); // AttachRemoteJavaProcessAction
+                    } catch (IOException ex) {
+                        notificationService.showNotification(project, "Attach Failed", "IO Error: " + ex.getMessage());
+                    }
+                }
+            });
         }
     }
 

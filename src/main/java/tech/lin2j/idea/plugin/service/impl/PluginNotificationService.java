@@ -4,7 +4,6 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
-import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 
@@ -21,7 +20,7 @@ public final class PluginNotificationService {
         notificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("EasyDeploy");
     }
 
-    public void showHotReloadNotification(Project project, String title, String message) {
+    public void showNotification(Project project, String title, String message) {
         Notification notification = notificationGroup.createNotification(title, message, NotificationType.INFORMATION);
         notification.setTitle(title);
         notification.setContent(message);

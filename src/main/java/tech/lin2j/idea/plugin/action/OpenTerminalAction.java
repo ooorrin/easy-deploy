@@ -41,18 +41,17 @@ public class OpenTerminalAction implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         SshServer tmp = ConfigHelper.getSshServerById(sshId);
-
-        boolean needPassword = AuthType.needPassword(tmp.getAuthType());
-        SshServer server = UiUtil.requestPasswordIfNecessary(tmp);
-        if (needPassword && StringUtil.isEmpty(server.getPassword())) {
-            return;
-        }
         SshStatus status = new SshStatus(false, null);
-        String title = String.format("Opening terminal %s:%s", server.getIp(), server.getPort());
+        String title = String.format("Opening terminal %s:%s", tmp.getIp(), tmp.getPort());
         ProgressManager.getInstance().run(new Task.Backgroundable(project, title) {
             CloudTerminalRunner runner = null;
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
+                boolean needPassword = AuthType.needPassword(tmp.getAuthType());
+                SshServer server = UiUtil.requestPasswordIfNecessary(tmp);
+                if (needPassword && StringUtil.isEmpty(server.getPassword())) {
+                    return;
+                }
                 indicator.setIndeterminate(false);
                 try {
                     runner = TerminalRunnerUtil.createCloudTerminalRunner(project, server, workingDirectory);
@@ -72,7 +71,7 @@ public class OpenTerminalAction implements ActionListener {
                 }
                 TerminalView terminalView = TerminalView.getInstance(project);
                 TerminalTabState tabState = new TerminalTabState();
-                tabState.myTabName = server.getIp() + ":" + server.getPort();
+                tabState.myTabName = tmp.getIp() + ":" + tmp.getPort();
                 terminalView.createNewSession(runner, tabState);
             }
         });

@@ -27,6 +27,7 @@ public class DeployConsoleToolWindowFactory implements ToolWindowFactory {
         toolWindow.getContentManager().addContent(deploy);
         // messages tab
         ConsoleLogView commandExecuteView = new ConsoleLogView(project);
+        commandExecuteView.attachProject();
         Content messages = contentFactory.createContent(commandExecuteView, "Console", false);
         toolWindow.getContentManager().addContent(messages);
 

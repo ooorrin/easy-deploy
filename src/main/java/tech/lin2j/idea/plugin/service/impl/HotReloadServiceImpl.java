@@ -145,16 +145,17 @@ public class HotReloadServiceImpl implements IHotReloadService {
                                            SshjConnection conn,
                                            PsiJavaFile psiFile,
                                            int httpPort) {
-        ProjectTaskManager instance = ProjectTaskManager.getInstance(project);
-        Promise<ProjectTaskManager.Result> promise = instance.compile(psiFile.getVirtualFile());
-        promise.then(result -> {
-            if (result.hasErrors()) {
-                // 编译报错
-                return result.hasErrors();
-            }
-            ProgressManager.getInstance().run(new Task.Backgroundable(project, "Class retransform") {
-                @Override
-                public void run(@NotNull ProgressIndicator indicator) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Class retransform") {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                indicator.setIndeterminate(false);
+                ProjectTaskManager instance = ProjectTaskManager.getInstance(project);
+                Promise<ProjectTaskManager.Result> promise = instance.compile(psiFile.getVirtualFile());
+                promise.then(result -> {
+                    if (result.hasErrors()) {
+                        // 编译报错
+                        return result.hasErrors();
+                    }
                     // class 文件查找
                     String classFilename = psiFile.getName().replace(".java", ".class");
                     String classPackage = psiFile.getPackageName().replaceAll("\\.", "/");
@@ -178,9 +179,9 @@ public class HotReloadServiceImpl implements IHotReloadService {
                         break;
                     }
                     indicator.setFraction(1f);
-                }
-            });
-            return result.hasErrors();
+                    return result.hasErrors();
+                });
+            }
         });
     }
 
@@ -244,7 +245,6 @@ public class HotReloadServiceImpl implements IHotReloadService {
         }
     }
 
-
     private String extractArthasPack() throws IOException {
         // create directory
         String edDir = FileUtil.getHomeDir() + "/.easy-deploy/";
@@ -273,6 +273,6 @@ public class HotReloadServiceImpl implements IHotReloadService {
 
     private void showBalloonMessage(Project project, String title, String content) {
         PluginNotificationService service = ApplicationManager.getApplication().getService(PluginNotificationService.class);
-        service.showHotReloadNotification(project, title, content);
+        service.showNotification(project, title, content);
     }
 }

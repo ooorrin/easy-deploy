@@ -9,7 +9,7 @@ import tech.lin2j.idea.plugin.event.ApplicationContext;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ui.ftp.container.LocalFileTableContainer;
 import tech.lin2j.idea.plugin.ui.ftp.container.RemoteFileTableContainer;
-import tech.lin2j.idea.plugin.ui.log.ConsoleLogViewer;
+import tech.lin2j.idea.plugin.ui.module.ConsoleLogView;
 
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
@@ -49,12 +49,12 @@ public class FTPConsole {
         JBSplitter mainPanel = new JBSplitter(true, "", 0.6f);
         mainPanel.setFirstComponent(fileWindows);
 
-        ConsoleLogViewer logViewer = new ConsoleLogViewer(project);
-        progressTable = new ProgressTable(localContainer, remoteContainer, logViewer.getConsoleView());
+        ConsoleLogView consoleView = new ConsoleLogView(project);
+        progressTable = new ProgressTable(localContainer, remoteContainer, consoleView);
 
         JBTabbedPane transferPane = new JBTabbedPane();
         transferPane.addTab("Transfer", MyIcons.Transfer, progressTable);
-        transferPane.addTab("Log" , AllIcons.Debugger.Console, logViewer.getRoot());
+        transferPane.addTab("Log" , AllIcons.Debugger.Console, consoleView);
 
         mainPanel.setSecondComponent(transferPane);
 

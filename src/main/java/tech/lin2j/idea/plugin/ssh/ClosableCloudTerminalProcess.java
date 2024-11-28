@@ -1,7 +1,6 @@
-package tech.lin2j.idea.plugin.terminal;
+package tech.lin2j.idea.plugin.ssh;
 
 import org.jetbrains.plugins.terminal.cloud.CloudTerminalProcess;
-import tech.lin2j.idea.plugin.ssh.CustomTtyConnector;
 
 /**
  * @author linjinjia

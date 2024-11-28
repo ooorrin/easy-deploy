@@ -1,12 +1,11 @@
 package tech.lin2j.idea.plugin.file;
 
-import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.util.text.StringUtil;
 import net.schmizz.sshj.common.StreamCopier;
 import net.schmizz.sshj.xfer.TransferListener;
+import tech.lin2j.idea.plugin.ssh.CommandLog;
+import tech.lin2j.idea.plugin.uitl.FileTransferSpeed;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 /**
@@ -15,27 +14,26 @@ import java.util.stream.Stream;
  */
 public class ConsoleTransferListener implements TransferListener {
     private final String relPath;
-    private final ConsoleView consoleView;
+    private final CommandLog console;
     private final FileTransferSpeed fileTransferSpeed = new FileTransferSpeed();
 
-    public ConsoleTransferListener(String relPath, ConsoleView consoleView) {
+    public ConsoleTransferListener(String relPath, CommandLog console) {
         if (!relPath.endsWith("/")) {
             relPath += "/";
         }
         this.relPath = relPath;
-        this.consoleView = consoleView;
+        this.console = console;
     }
 
     @Override
     public TransferListener directory(String name) {
-        return new ConsoleTransferListener(relPath + name + "/", consoleView);
+        return new ConsoleTransferListener(relPath + name + "/", console);
     }
 
     @Override
     public StreamCopier.Listener file(final String name, final long size) {
         String path = relPath + name;
-        info("Transfer file: " + path + ", Size: " + StringUtil.formatFileSize(size) + "\n");
-//        fileTransferSpeed.start();
+        console.info("Transfer file: " + path + ", Size: " + StringUtil.formatFileSize(size) + "\n");
         return transferred -> {
             String speed = fileTransferSpeed.accept(transferred);
 
@@ -59,16 +57,7 @@ public class ConsoleTransferListener implements TransferListener {
         } else {
             sb.append(complete).append("% , speed: ").append(speed);
         }
-        print("\r");
-        print(sb.toString());
-    }
-
-    private void print(String msg) {
-        consoleView.print(msg, ConsoleViewContentType.NORMAL_OUTPUT);
-    }
-
-    private void info(String text) {
-        consoleView.print("[INFO] ", ConsoleViewContentType.LOG_INFO_OUTPUT);
-        consoleView.print(text, ConsoleViewContentType.NORMAL_OUTPUT);
+        console.print("\r");
+        console.print(sb.toString());
     }
 }

@@ -1,23 +1,16 @@
-package tech.lin2j.idea.plugin.file;
-
-import java.util.concurrent.atomic.AtomicLong;
+package tech.lin2j.idea.plugin.uitl;
 
 /**
  * @author linjinjia
  * @date 2024/11/24 20:49
  */
 public class FileTransferSpeed {
-    private static final int UPDATE_INTERVAL = 1000;
+    private static final int UPDATE_INTERVAL = 750;
     private long lastTransferred;
     private long lastUpdateTime;
-    private String speed = "0 B/s";
+    private String speed = "-- B/s";
 
     public FileTransferSpeed() {
-        lastUpdateTime = System.currentTimeMillis();
-        lastTransferred = 0;
-    }
-
-    public void start() {
         lastUpdateTime = System.currentTimeMillis();
         lastTransferred = 0;
     }
@@ -50,7 +43,7 @@ public class FileTransferSpeed {
 
         // 如果速度为 0 或非常小，直接返回 "0 B/s"
         if (speed < 1e-6) {
-            return "0 B/s";
+            return "-- B/s";
         }
 
         return String.format("%.2f %s", speed, units[unitIndex]);

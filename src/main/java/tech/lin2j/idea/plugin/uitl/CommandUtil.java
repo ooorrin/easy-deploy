@@ -7,15 +7,15 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import org.jetbrains.annotations.NotNull;
-import tech.lin2j.idea.plugin.factory.SshServiceFactory;
-import tech.lin2j.idea.plugin.file.filter.ConsoleFileFilter;
 import tech.lin2j.idea.plugin.file.ConsoleTransferListener;
+import tech.lin2j.idea.plugin.file.filter.ConsoleFileFilter;
 import tech.lin2j.idea.plugin.file.filter.ExtensionFilter;
 import tech.lin2j.idea.plugin.file.filter.FileFilter;
 import tech.lin2j.idea.plugin.model.Command;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.UploadProfile;
 import tech.lin2j.idea.plugin.service.ISshService;
+import tech.lin2j.idea.plugin.service.impl.SshjSshService;
 import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
@@ -29,7 +29,6 @@ import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
  * @date 2022/5/7 08:58
  */
 public class CommandUtil {
-    private static final ISshService sshService = SshServiceFactory.getSshService();
 
     public static void executeUpload(@NotNull Project project, @NotNull UploadProfile profile,
                                      @NotNull SshServer server, @NotNull DialogWrapper dialogWrapper) {
@@ -61,9 +60,10 @@ public class CommandUtil {
         String exclude = profile.getExclude();
         String initMsg = "Upload [" + localFile + "] to [" + remoteTargetDir + "]";
         FileFilter filter = new ConsoleFileFilter(new ExtensionFilter(exclude), commandLog);
-        ConsoleTransferListener listener = new ConsoleTransferListener(localFile, commandLog.getConsole());
+        ConsoleTransferListener listener = new ConsoleTransferListener(localFile, commandLog);
 
         commandLog.info(initMsg);
+        ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
         SshStatus status = sshService.upload(filter, server, localFile, remoteTargetDir, listener);
 
         if (!status.isSuccess()) {
@@ -79,6 +79,7 @@ public class CommandUtil {
     public static void executeCommand(Command command, SshServer server, CommandLog commandLog) {
         String cmdContent = command.generateCmdLine();
         commandLog.info(String.format("Execute command on %s:%s : {%s}", server.getIp(), server.getPort(), cmdContent));
+        ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
         sshService.executeAsync(commandLog, server, cmdContent);
     }
 

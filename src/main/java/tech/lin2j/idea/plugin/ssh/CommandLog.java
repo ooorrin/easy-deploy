@@ -4,12 +4,21 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.util.Key;
 
+/**
+ *
+ * @author linjinjia
+ * @date 2024/11/28 22:14
+ */
 public interface CommandLog {
     Key<CommandLog> COMMAND_LOG_KEY = Key.create("ProjectCommandLog");
 
     ConsoleView getConsole();
 
     void print(String msg, ConsoleViewContentType contentType);
+
+    default void print(String msg) {
+        print(msg, ConsoleViewContentType.NORMAL_OUTPUT);
+    }
 
     default void info(String msg) {
         print("[INFO] ", ConsoleViewContentType.LOG_INFO_OUTPUT);

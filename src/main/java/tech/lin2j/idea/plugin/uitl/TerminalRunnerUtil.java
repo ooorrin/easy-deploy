@@ -10,7 +10,7 @@ import org.jetbrains.plugins.terminal.cloud.CloudTerminalRunner;
 import tech.lin2j.idea.plugin.factory.CustomTtyConnectorFactory;
 import tech.lin2j.idea.plugin.ssh.CustomTtyConnector;
 import tech.lin2j.idea.plugin.ssh.SshServer;
-import tech.lin2j.idea.plugin.terminal.ClosableCloudTerminalProcess;
+import tech.lin2j.idea.plugin.ssh.ClosableCloudTerminalProcess;
 
 import java.awt.Dimension;
 import java.lang.reflect.Constructor;

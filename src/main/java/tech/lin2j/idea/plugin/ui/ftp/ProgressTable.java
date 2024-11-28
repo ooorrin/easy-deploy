@@ -1,6 +1,5 @@
 package tech.lin2j.idea.plugin.ui.ftp;
 
-import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.util.ColorProgressBar;
 import com.intellij.openapi.util.text.StringUtil;
@@ -15,6 +14,7 @@ import tech.lin2j.idea.plugin.file.TableFile;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.PluginSetting;
 import tech.lin2j.idea.plugin.model.event.FileTransferEvent;
+import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ui.ftp.container.FileTableContainer;
 import tech.lin2j.idea.plugin.ui.table.ProgressCell;
 import tech.lin2j.idea.plugin.uitl.FTPUtil;
@@ -54,7 +54,7 @@ public class ProgressTable extends JPanel implements ApplicationListener<FileTra
     private JBTable outputTable;
     private DefaultTableModel tableModel;
     private SFTPClient sftpClient;
-    private final ConsoleView consoleView;
+    private final CommandLog console;
     private int rows = 0;
     private final FileTableContainer localContainer;
     private final FileTableContainer remoteContainer;
@@ -76,10 +76,10 @@ public class ProgressTable extends JPanel implements ApplicationListener<FileTra
 
     public ProgressTable(FileTableContainer localContainer,
                          FileTableContainer remoteContainer,
-                         ConsoleView consoleView) {
+                         CommandLog console) {
         this.localContainer = localContainer;
         this.remoteContainer = remoteContainer;
-        this.consoleView = consoleView;
+        this.console = console;
 
         setLayout(new BorderLayout());
         init();
@@ -145,16 +145,16 @@ public class ProgressTable extends JPanel implements ApplicationListener<FileTra
 
                     progressBar.setColor(pluginSetting.downloadProgressColor());
                 }
-                tableModel.addRow(new Object[]{name, state, progressBar, size, local, remote});
+                tableModel.addRow(new Object[]{name, state, progressBar, size, "--", local, remote});
                 rows++;
 
                 // serialize transfer task
                 String realPath = sourceContainer.getPath();
-                TransferListener transferListener = new ProgressTableTransferListener(realPath, cell, consoleView);
+                TransferListener transferListener = new ProgressTableTransferListener(realPath, cell, console);
                 TASK_QUEUE.add(new TransferTask(transferListener, cell, isUpload, local, remote, targetContainer));
             }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            console.error(e.getMessage());
         }
     }
 

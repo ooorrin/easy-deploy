@@ -212,22 +212,31 @@
         <!-- Add your extensions here -->
         <fileEditorProvider implementation="tech.lin2j.idea.plugin.ui.editor.SFTPEditorProvider"/>
         <projectService serviceImplementation="tech.lin2j.idea.plugin.ui.editor.SFTPFileSystem"/>
-        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.DmgFileType" fieldName="INSTANCE" name="Disk Image" extensions="dmg"/>
-        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.ConfigFileType" fieldName="INSTANCE" name="Config" extensions="cfg;config;ini;"/>
-        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.PdfFileType" fieldName="INSTANCE" name="PDF" extensions="pdf"/>
-        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.WordFileType" fieldName="INSTANCE" name="Word" extensions="doc;docx"/>
-        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.ExcelFileType" fieldName="INSTANCE" name="Excel" extensions="xlsx;xls"/>
-        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.PptFileType" fieldName="INSTANCE" name="PPT" extensions="ppt;pptx"/>
-        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.LogFileType" fieldName="INSTANCE" name="Log" extensions="log"/>
+        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.DmgFileType" fieldName="INSTANCE"
+                  name="Disk Image" extensions="dmg"/>
+        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.ConfigFileType" fieldName="INSTANCE"
+                  name="Config" extensions="cfg;config;ini;"/>
+        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.PdfFileType" fieldName="INSTANCE"
+                  name="PDF" extensions="pdf"/>
+        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.WordFileType" fieldName="INSTANCE"
+                  name="Word" extensions="doc;docx"/>
+        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.ExcelFileType" fieldName="INSTANCE"
+                  name="Excel" extensions="xlsx;xls"/>
+        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.PptFileType" fieldName="INSTANCE"
+                  name="PPT" extensions="ppt;pptx"/>
+        <fileType implementationClass="tech.lin2j.idea.plugin.file.fileTypes.LogFileType" fieldName="INSTANCE"
+                  name="Log" extensions="log"/>
 
         <applicationService
-                id="HotReloadServiceImpl"
+                id="HotReloadService"
                 serviceInterface="tech.lin2j.idea.plugin.service.IHotReloadService"
                 serviceImplementation="tech.lin2j.idea.plugin.service.impl.HotReloadServiceImpl"/>
+        <applicationService
+                id="SshjService"
+                serviceInterface="tech.lin2j.idea.plugin.service.ISshService"
+                serviceImplementation="tech.lin2j.idea.plugin.service.impl.SshjSshService"/>
 
-        <notificationGroup displayType="BALLOON" id="EasyDeploy" />
-
-        <webHelpProvider implementation="tech.lin2j.idea.plugin.ui.HotReloadWebHelper" id="hotReloadWebHelper" />
+        <notificationGroup displayType="BALLOON" id="EasyDeploy"/>
     </extensions>
 
     <applicationListeners>
@@ -236,15 +245,13 @@
     </applicationListeners>
 
     <actions>
-<!--        <action id="Terminal.OpenSFTP" class="tech.lin2j.idea.plugin.action.OpenInSFTPPanelAction" text="Open In SFTP">-->
-<!--            <add-to-group group-id="ToolWindowContextMenu" anchor="last"/>-->
-<!--        </action>-->
         <action
-                id="EasyDeploy.HotReload"
+                id="EasyDeploy.ClassHotReload"
                 class="tech.lin2j.idea.plugin.action.ClassHotReloadAction"
                 text="Class Retransform"
+                icon="MyIcons.EasyDeploy"
                 description="Class hot reload">
-            <add-to-group group-id="EditorPopupMenu" anchor="before" relative-to-action="EditorPopupMenu" />
+            <add-to-group group-id="EditorPopupMenu" anchor="before" relative-to-action="$Paste"/>
         </action>
     </actions>
 

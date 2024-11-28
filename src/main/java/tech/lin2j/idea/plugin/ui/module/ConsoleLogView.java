@@ -46,15 +46,14 @@ public class ConsoleLogView extends SimpleToolWindowPanel implements CommandLog,
         return root;
     }
 
-    public ConsoleView getConsoleView() {
-        return console;
+    public void attachProject() {
+        project.putUserData(COMMAND_LOG_KEY, this);
     }
 
     private void initRoot() {
         root = new JPanel(new BorderLayout());
         initConsoleView();
         assert console != null;
-        project.putUserData(COMMAND_LOG_KEY, this);
         root.add(console, BorderLayout.CENTER);
     }
 
@@ -91,7 +90,7 @@ public class ConsoleLogView extends SimpleToolWindowPanel implements CommandLog,
     }
 
     @Override
-    public ConsoleViewImpl getConsole() {
+    public ConsoleView getConsole() {
         return console;
     }
 

@@ -1,9 +1,10 @@
 package tech.lin2j.idea.plugin.uitl;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.text.StringUtil;
 import net.schmizz.sshj.xfer.FilePermission;
-import tech.lin2j.idea.plugin.factory.SshServiceFactory;
 import tech.lin2j.idea.plugin.service.ISshService;
+import tech.lin2j.idea.plugin.service.impl.SshjSshService;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
 
@@ -27,8 +28,6 @@ public class PosixUtil {
      */
     private static final Map<String, String> USER_GROUP_MAP = new ConcurrentHashMap<>();
 
-    private static final ISshService sshClient = SshServiceFactory.getSshService();
-
     /**
      * Get the username of the specified server by UID
      *
@@ -42,7 +41,8 @@ public class PosixUtil {
             return USER_NAME_MAP.get(key);
         }
 
-        SshStatus status = sshClient.execute(server, "id -nu " + uid);
+        ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
+        SshStatus status = sshService.execute(server, "id -nu " + uid);
         if (status.isSuccess()) {
             String user = status.getMessage();
             if (StringUtil.isNotEmpty(user) && user.contains("no such user")) {
@@ -67,7 +67,8 @@ public class PosixUtil {
             return USER_GROUP_MAP.get(key);
         }
 
-        SshStatus status = sshClient.execute(server, "id -Gn " + uid);
+        ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
+        SshStatus status = sshService.execute(server, "id -Gn " + uid);
         if (status.isSuccess()) {
             String group = status.getMessage();
             if (StringUtil.isNotEmpty(group) && group.contains("no such user")) {

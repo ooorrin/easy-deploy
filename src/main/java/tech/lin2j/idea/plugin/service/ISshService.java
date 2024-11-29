@@ -5,6 +5,7 @@ import tech.lin2j.idea.plugin.file.filter.FileFilter;
 import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
+import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
 /**
  * @author linjinjia
@@ -44,6 +45,9 @@ public interface ISshService {
     SshStatus download(SshServer sshServer, String remoteFile, String localFile);
 
     SshStatus upload(FileFilter filter, SshServer server, String localFile,
+                     String remoteDir, TransferListener listener);
+
+    SshStatus upload(FileFilter filter, SshjConnection connection, String localFile,
                      String remoteDir, TransferListener listener);
 
 

@@ -248,9 +248,8 @@
         <action
                 id="EasyDeploy.ClassHotReload"
                 class="tech.lin2j.idea.plugin.action.ClassHotReloadAction"
-                text="Class Retransform"
                 icon="MyIcons.EasyDeploy"
-                description="Class hot reload">
+                description="Remote class hot reload">
             <add-to-group group-id="EditorPopupMenu" anchor="before" relative-to-action="$Paste"/>
         </action>
     </actions>

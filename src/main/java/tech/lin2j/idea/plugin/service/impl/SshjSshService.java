@@ -116,6 +116,12 @@ public class SshjSshService implements ISshService {
     }
 
     @Override
+    public SshStatus upload(FileFilter filter, SshjConnection connection,
+                            String localFile, String remoteDir, TransferListener listener) {
+        return null;
+    }
+
+    @Override
     public SshStatus isDirExist(SshServer server, String remoteTargetDir) {
         return null;
     }

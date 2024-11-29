@@ -8,7 +8,6 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
@@ -33,6 +32,7 @@ import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.exception.RemoteSdkException;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
+import tech.lin2j.idea.plugin.uitl.MessagesBundle;
 import tech.lin2j.idea.plugin.uitl.WebBrowseUtil;
 
 import javax.swing.*;
@@ -93,15 +93,15 @@ public class ClassRetransformDialog extends DialogWrapper {
 
         root = FormBuilder.createFormBuilder()
                 .setVerticalGap(8)
-                .addLabeledComponent("Remote server", serverComboBox)
-                .addLabeledComponent("Remote tool pack", arthasPackContainer)
-                .addLabeledComponent("Remote process", processRefreshContainer)
-                .addLabeledComponent("Arthas HTTP Port", processBindContainer)
-                .addLabeledComponent("Target java class", targetClassFile)
+                .addLabeledComponent(MessagesBundle.getText("dialog.retransform.server"), serverComboBox)
+                .addLabeledComponent(MessagesBundle.getText("dialog.retransform.tool-pack"), arthasPackContainer)
+                .addLabeledComponent(MessagesBundle.getText("dialog.retransform.process"), processRefreshContainer)
+                .addLabeledComponent(MessagesBundle.getText("dialog.retransform.port"), processBindContainer)
+                .addLabeledComponent(MessagesBundle.getText("dialog.retransform.target-file"), targetClassFile)
                 .getPanel();
 
-        setTitle("Class Retransform");
-        setOKButtonText("Retransform");
+        setTitle(MessagesBundle.getText("dialog.retransform.frame"));
+        setOKButtonText(MessagesBundle.getText("dialog.retransform.ok-btn"));
         setSize(600, 0);
         init();
     }
@@ -127,6 +127,11 @@ public class ClassRetransformDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
+        if (projectConfig.getPid() == null) {
+            String text = MessagesBundle.getText("dialog.retransform.attach-status.wait");
+            notificationService.showNotification(project, "Attach Process", text);
+            return;
+        }
         if (isArthasPackNotExist()) {
             return;
         }
@@ -324,10 +329,9 @@ public class ClassRetransformDialog extends DialogWrapper {
 
     private boolean isArthasPackNotExist() {
         if (!arthasPackExist) {
-            Messages.showInfoMessage(
-                    "The server does not have the Arthas toolkit yet. Please upload it first",
-                    "Arthas Tool"
-            );
+            String title = "Arthas Tool";
+            String text = MessagesBundle.getText("dialog.retransform.tool-pack.miss");
+            notificationService.showNotification(project, title, text);
             return true;
         }
         return false;
@@ -382,11 +386,11 @@ public class ClassRetransformDialog extends DialogWrapper {
                 if (first.isPresent()) {
                     first.ifPresent(javaProcess -> javaProcessComboBox.setSelectedItem(javaProcess));
                 } else {
-                    attachedStatus.setText("Process not found");
+                    attachedStatus.setText(MessagesBundle.getText("dialog.retransform.attach-status.miss"));
                     attachedStatus.setForeground(JBColor.RED);
                 }
             } else {
-                attachedStatus.setText("Waiting for selection process");
+                attachedStatus.setText(MessagesBundle.getText("dialog.retransform.attach-status.wait"));
                 attachedStatus.setForeground(JBColor.RED);
             }
         } catch (IOException e) {
@@ -397,7 +401,11 @@ public class ClassRetransformDialog extends DialogWrapper {
     // inner class
     private class RefreshJavaProcess extends NewUpdateThreadAction {
         public RefreshJavaProcess() {
-            super("Refresh", "Refresh java process", MyIcons.Actions.Refresh);
+            super(
+                    MessagesBundle.getText("dialog.retransform.action.refresh"),
+                    "Refresh java process",
+                    MyIcons.Actions.Refresh
+            );
         }
 
         @Override
@@ -409,7 +417,7 @@ public class ClassRetransformDialog extends DialogWrapper {
 
     public class AttachRemoteJavaProcessAction extends AbstractAction {
         public AttachRemoteJavaProcessAction() {
-            super("Attach Process");
+            super(MessagesBundle.getText("dialog.retransform.attach-btn"));
         }
 
         @Override
@@ -441,7 +449,11 @@ public class ClassRetransformDialog extends DialogWrapper {
         private final DialogWrapper dialogWrapper;
 
         public UploadArthasPackAction(DialogWrapper dialogWrapper) {
-            super("Upload", "Upload arthas pack", MyIcons.Actions.UPLOAD);
+            super(
+                    MessagesBundle.getText("dialog.retransform.action.upload"),
+                    "Upload arthas pack",
+                    MyIcons.Actions.UPLOAD
+            );
             this.dialogWrapper = dialogWrapper;
         }
 

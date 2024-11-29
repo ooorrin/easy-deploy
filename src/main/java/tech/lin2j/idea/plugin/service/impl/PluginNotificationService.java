@@ -4,6 +4,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 
@@ -24,6 +25,14 @@ public final class PluginNotificationService {
         Notification notification = notificationGroup.createNotification(title, message, NotificationType.INFORMATION);
         notification.setTitle(title);
         notification.setContent(message);
+        notification.notify(project);
+    }
+
+    public void showNotification(Project project, String title, String message, AnAction action) {
+        Notification notification = notificationGroup.createNotification(title, message, NotificationType.INFORMATION);
+        notification.setTitle(title);
+        notification.setContent(message);
+        notification.addAction(action);
         notification.notify(project);
     }
 }

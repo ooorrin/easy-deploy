@@ -15,7 +15,6 @@ import tech.lin2j.idea.plugin.model.Command;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.UploadProfile;
 import tech.lin2j.idea.plugin.service.ISshService;
-import tech.lin2j.idea.plugin.service.impl.SshjSshService;
 import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.SshStatus;
@@ -63,6 +62,7 @@ public class CommandUtil {
         ConsoleTransferListener listener = new ConsoleTransferListener(localFile, commandLog);
 
         commandLog.info(initMsg);
+        printTransferMode(commandLog);
         ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
         SshStatus status = sshService.upload(filter, server, localFile, remoteTargetDir, listener);
 
@@ -97,4 +97,11 @@ public class CommandUtil {
     private static void printFinished(CommandLog commandLog) {
         commandLog.info("Finished at: " + LocalDateTime.now());
     }
+
+
+    private static void printTransferMode(CommandLog commandLog) {
+        String mode = ConfigHelper.isSCPTransferMode() ? "SCP" : "SFTP";
+        commandLog.info("Transfer in " + mode + " mode");
+    }
+
 }

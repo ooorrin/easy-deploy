@@ -39,7 +39,9 @@ public interface ISshService {
     SshStatus upload(FileFilter filter, SshServer server, String localFile,
                      String remoteDir, TransferListener listener);
 
-    boolean upload(FileFilter filter, SshjConnection connection, String localFile, String remoteDir, CommandLog commandLog);
+    boolean upload(FileFilter filter, SshjConnection connection,
+                   String localFile, String remoteDir,
+                   CommandLog commandLog, boolean createRemoteDir);
 
     /**
      * get file from remote server

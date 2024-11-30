@@ -121,15 +121,15 @@ public class SshjSshService implements ISshService {
 
     @Override
     public boolean upload(FileFilter filter, SshjConnection sshjConnection,
-                       String localFile, String remoteDir, CommandLog commandLog) {
+                          String localFile, String remoteDir,
+                          CommandLog commandLog, boolean createRemoteDir) {
         try {
             File file = new File(localFile);
-            if (file.isDirectory()) {
+            if (file.isDirectory() && createRemoteDir) {
                 remoteDir = remoteDir + "/" + file.getName();
                 sshjConnection.mkdirs(remoteDir);
             }
-            commandLog.info("Upload [" + localFile + "] to [" + remoteDir + "]");
-            if (new File(localFile).isDirectory()) {
+            if (file.isDirectory()) {
                 putDir(sshjConnection, filter, localFile, remoteDir);
             } else {
                 putFile(sshjConnection, filter, localFile, remoteDir);

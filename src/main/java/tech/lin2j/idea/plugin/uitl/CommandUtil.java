@@ -6,11 +6,13 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
+import com.intellij.util.PathUtil;
 import org.jetbrains.annotations.NotNull;
+import tech.lin2j.idea.plugin.enums.Constant;
 import tech.lin2j.idea.plugin.file.ConsoleTransferListener;
 import tech.lin2j.idea.plugin.file.filter.ConsoleFileFilter;
-import tech.lin2j.idea.plugin.file.filter.ExtensionFilter;
-import tech.lin2j.idea.plugin.file.filter.FileFilter;
+import tech.lin2j.idea.plugin.file.filter.ExtExcludeFilter;
+import tech.lin2j.idea.plugin.file.filter.RegexFileFilter;
 import tech.lin2j.idea.plugin.model.Command;
 import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.UploadProfile;
@@ -20,8 +22,8 @@ import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
@@ -58,20 +60,34 @@ public class CommandUtil {
     public static void executeUpload(UploadProfile profile, SshServer server, CommandLog commandLog) {
         String remoteTargetDir = profile.getLocation();
         String exclude = profile.getExclude();
-        FileFilter filter = new ConsoleFileFilter(new ExtensionFilter(exclude), commandLog);
+        ConsoleFileFilter filter = new ConsoleFileFilter(new ExtExcludeFilter(exclude, commandLog), commandLog);
         try {
             SshjConnection sshjConnection = SshConnectionManager.makeSshjConnection(server);
             ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
-            String[] localFiles = profile.getFile().split("\n");
+            String[] localFiles = profile.getFile().split(Constant.LOCAL_FILE_SEPARATOR);
 
-            boolean allUploaded = true;
             printTransferMode(commandLog);
+            boolean allUploaded = true;
             for (String localFile : localFiles) {
-                sshjConnection.setTransferListener(new ConsoleTransferListener(localFile, commandLog));
-                boolean success = sshService.upload(filter, sshjConnection, localFile, remoteTargetDir, commandLog);
+                String[] ss = localFile.split(Constant.LOCAL_FILE_INFO_SEPARATOR);
+                String targetFile = ss[0];
+                boolean useRegex = ss.length == 2 && Objects.equals(ss[1], Constant.STR_TRUE);
+                if (useRegex) {
+                    RegexFileFilter regexFilter = new RegexFileFilter(PathUtil.getFileName(targetFile), commandLog);
+                    filter.addFilter(regexFilter);
+                    targetFile = PathUtil.getParentPath(targetFile);
+                }
+
+                commandLog.info("Upload [" + localFile + "] to [" + remoteTargetDir + "]" + (useRegex ? ", regex: true" : ""));
+                sshjConnection.setTransferListener(new ConsoleTransferListener(targetFile, commandLog));
+                boolean success = sshService.upload(filter, sshjConnection, targetFile, remoteTargetDir, commandLog, !useRegex);
                 if (!success) {
                     allUploaded = false;
                     break;
+                }
+
+                if (useRegex) {
+                    filter.remove(filter);
                 }
             }
 
@@ -84,7 +100,7 @@ public class CommandUtil {
                 printFinished(commandLog);
                 sshjConnection.close();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             commandLog.error(e.getMessage());
         }
     }

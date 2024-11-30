@@ -101,9 +101,9 @@ public class AddUploadProfileDialog extends DialogWrapper {
         Command command = (Command) commandBox.getSelectedItem();
 
         String exclude = excludeInput.getText();
-        if (!FileUtil.isDirectory(file)) {
-            exclude = "";
-        }
+//        if (!FileUtil.isDirectory(file)) {
+//            exclude = "";
+//        }
 
         // update config if profile is exist
         Integer sshId = profile.getSshId();
@@ -198,7 +198,7 @@ public class AddUploadProfileDialog extends DialogWrapper {
             VirtualFile virtualFile = FileChooser.chooseFile(descriptor, fileBrowser, project,  getCurrentWorkingDir());
             if (virtualFile != null) {
                 fileBrowser.setText(virtualFile.getPath());
-                excludeInput.setEnabled(virtualFile.isDirectory());
+//                excludeInput.setEnabled(virtualFile.isDirectory());
             }
         });
     }

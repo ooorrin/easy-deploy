@@ -58,11 +58,16 @@ public class SshjSshService implements ISshService {
         SshjConnection sshjConnection = null;
         try {
             sshjConnection = SshConnectionManager.makeSshjConnection(sshServer);
-            sshjConnection.executeAsync(commandLog, command, new AtomicBoolean(false));
+            sshjConnection.executeAsync(commandLog, command, new AtomicBoolean(false), true);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             commandLog.error(e.getMessage());
         }
+    }
+
+    @Override
+    public void executeAsync(CommandLog commandLog, SshjConnection connection, String command) {
+        connection.executeAsync(commandLog, command, new AtomicBoolean(false), true);
     }
 
     @Override
@@ -85,8 +90,7 @@ public class SshjSshService implements ISshService {
 
     @Override
     public SshStatus upload(FileFilter filter, SshServer sshServer,
-                            String localFile, String remoteDir,
-                            TransferListener listener) {
+                            String localFile, String remoteDir, TransferListener listener) {
         SshStatus status = new SshStatus(true, "OK");
 
         SshjConnection sshjConnection = null;
@@ -116,9 +120,25 @@ public class SshjSshService implements ISshService {
     }
 
     @Override
-    public SshStatus upload(FileFilter filter, SshjConnection connection,
-                            String localFile, String remoteDir, TransferListener listener) {
-        return null;
+    public boolean upload(FileFilter filter, SshjConnection sshjConnection,
+                       String localFile, String remoteDir, CommandLog commandLog) {
+        try {
+            File file = new File(localFile);
+            if (file.isDirectory()) {
+                remoteDir = remoteDir + "/" + file.getName();
+                sshjConnection.mkdirs(remoteDir);
+            }
+            commandLog.info("Upload [" + localFile + "] to [" + remoteDir + "]");
+            if (new File(localFile).isDirectory()) {
+                putDir(sshjConnection, filter, localFile, remoteDir);
+            } else {
+                putFile(sshjConnection, filter, localFile, remoteDir);
+            }
+        } catch (Exception e) {
+            commandLog.error(e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     @Override

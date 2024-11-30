@@ -16,9 +16,11 @@ import tech.lin2j.idea.plugin.model.ConfigHelper;
 import tech.lin2j.idea.plugin.model.UploadProfile;
 import tech.lin2j.idea.plugin.service.ISshService;
 import tech.lin2j.idea.plugin.ssh.CommandLog;
+import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
-import tech.lin2j.idea.plugin.ssh.SshStatus;
+import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
@@ -54,25 +56,36 @@ public class CommandUtil {
     }
 
     public static void executeUpload(UploadProfile profile, SshServer server, CommandLog commandLog) {
-        String localFile = profile.getFile();
         String remoteTargetDir = profile.getLocation();
         String exclude = profile.getExclude();
-        String initMsg = "Upload [" + localFile + "] to [" + remoteTargetDir + "]";
         FileFilter filter = new ConsoleFileFilter(new ExtensionFilter(exclude), commandLog);
-        ConsoleTransferListener listener = new ConsoleTransferListener(localFile, commandLog);
+        try {
+            SshjConnection sshjConnection = SshConnectionManager.makeSshjConnection(server);
+            ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
+            String[] localFiles = profile.getFile().split("\n");
 
-        commandLog.info(initMsg);
-        printTransferMode(commandLog);
-        ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
-        SshStatus status = sshService.upload(filter, server, localFile, remoteTargetDir, listener);
+            boolean allUploaded = true;
+            printTransferMode(commandLog);
+            for (String localFile : localFiles) {
+                sshjConnection.setTransferListener(new ConsoleTransferListener(localFile, commandLog));
+                boolean success = sshService.upload(filter, sshjConnection, localFile, remoteTargetDir, commandLog);
+                if (!success) {
+                    allUploaded = false;
+                    break;
+                }
+            }
 
-        if (!status.isSuccess()) {
-            commandLog.error("Upload failed: " + status.getMessage());
-        } else if (profile.getCommandId() != null) {
-            Command command = ConfigHelper.getCommandById(profile.getCommandId());
-            executeCommand(command, server, commandLog);
-        } else {
-            printFinished(commandLog);
+            if (allUploaded && profile.getCommandId() != null) {
+                Command command = ConfigHelper.getCommandById(profile.getCommandId());
+                String cmdContent = command.generateCmdLine();
+                commandLog.info(String.format("Execute command on %s:%s : {%s}", server.getIp(), server.getPort(), cmdContent));
+                sshService.executeAsync(commandLog, sshjConnection, cmdContent);
+            } else {
+                printFinished(commandLog);
+                sshjConnection.close();
+            }
+        } catch (IOException e) {
+            commandLog.error(e.getMessage());
         }
     }
 
@@ -85,6 +98,7 @@ public class CommandUtil {
 
     private static void showToolWindow(Project project) {
         ToolWindow deployToolWindow = ToolWindowManager.getInstance(project).getToolWindow("Easy Deploy");
+        assert deployToolWindow != null;
         deployToolWindow.activate(null);
         Content messages = deployToolWindow.getContentManager().findContent("Console");
         deployToolWindow.getContentManager().setSelectedContent(messages);

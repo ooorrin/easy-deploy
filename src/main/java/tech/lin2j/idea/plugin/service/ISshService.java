@@ -34,6 +34,13 @@ public interface ISshService {
 
     void executeAsync(CommandLog commandLog, SshServer sshServer, String command);
 
+    void executeAsync(CommandLog commandLog, SshjConnection connection, String command);
+
+    SshStatus upload(FileFilter filter, SshServer server, String localFile,
+                     String remoteDir, TransferListener listener);
+
+    boolean upload(FileFilter filter, SshjConnection connection, String localFile, String remoteDir, CommandLog commandLog);
+
     /**
      * get file from remote server
      *
@@ -43,13 +50,6 @@ public interface ISshService {
      * @return download result
      */
     SshStatus download(SshServer sshServer, String remoteFile, String localFile);
-
-    SshStatus upload(FileFilter filter, SshServer server, String localFile,
-                     String remoteDir, TransferListener listener);
-
-    SshStatus upload(FileFilter filter, SshjConnection connection, String localFile,
-                     String remoteDir, TransferListener listener);
-
 
     /**
      * test whether the remote target directory is existed.

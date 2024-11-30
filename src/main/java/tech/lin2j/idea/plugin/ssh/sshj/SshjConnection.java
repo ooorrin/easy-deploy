@@ -143,7 +143,8 @@ public class SshjConnection implements SshConnection {
     }
 
     @Override
-    public void executeAsync(CommandLog commandLog, String cmd, AtomicBoolean cancel) {
+    public FutureTask<Void> executeAsync(CommandLog commandLog, String cmd,
+                                         AtomicBoolean cancel, boolean closeAfterFinished) {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Session session = this.sshClient.startSession();
             try {
@@ -177,11 +178,15 @@ public class SshjConnection implements SshConnection {
                 }
             } finally {
                 close(session);
-                commandLog.info("Finished at: " + LocalDateTime.now());
+                if (closeAfterFinished) {
+                    this.close();
+                }
+                printFinished(commandLog);
             }
             return null;
         });
         ApplicationManager.getApplication().executeOnPooledThread(task);
+        return task;
     }
 
     @Override
@@ -215,5 +220,9 @@ public class SshjConnection implements SshConnection {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    private static void printFinished(CommandLog commandLog) {
+        commandLog.info("Finished at: " + LocalDateTime.now());
     }
 }

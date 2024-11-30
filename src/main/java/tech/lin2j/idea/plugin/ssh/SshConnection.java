@@ -2,6 +2,7 @@ package tech.lin2j.idea.plugin.ssh;
 
 
 import java.io.IOException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -44,7 +45,8 @@ public interface SshConnection {
      */
     SshStatus execute(String cmd) throws IOException;
 
-    void executeAsync(CommandLog commandLog, String cmd, AtomicBoolean cancel);
+    FutureTask<Void> executeAsync(CommandLog commandLog, String cmd,
+                                  AtomicBoolean cancel, boolean closeAfterFinished);
 
     /**
      * Create a directory, automatically creating parent directories

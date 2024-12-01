@@ -1,6 +1,7 @@
 package tech.lin2j.idea.plugin.ui.dialog;
 
 import com.google.gson.Gson;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.Project;
@@ -35,7 +36,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.Objects;
 
+import static tech.lin2j.idea.plugin.enums.Constant.LOCAL_FILE_INFO_SEPARATOR;
+import static tech.lin2j.idea.plugin.enums.Constant.STR_TRUE;
 import static tech.lin2j.idea.plugin.ui.render.CommandColoredListCellRenderer.TEXT_PADDING;
 
 /**
@@ -201,7 +205,10 @@ public class UploadProfileDialog extends DialogWrapper implements ApplicationLis
 
     private void updateProfileInfo(UploadProfile profile) {
         hostLabel.setText(server.getIp() + ":" + server.getPort());
-        fileLabel.setText(profile.getFile());
+        String[] split = profile.getFile().split(LOCAL_FILE_INFO_SEPARATOR);
+        boolean useRegex = split.length == 2 && Objects.equals(split[1], STR_TRUE);
+        fileLabel.setIcon(useRegex ? AllIcons.Actions.Regex : null);
+        fileLabel.setText(split[0]);
         excludeLabel.setText(profile.getExclude());
         locationLabel.setText(profile.getLocation());
 

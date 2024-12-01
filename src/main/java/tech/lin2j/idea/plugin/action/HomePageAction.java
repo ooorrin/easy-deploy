@@ -14,7 +14,7 @@ public class HomePageAction extends NewUpdateThreadAction {
     private static final String text = MessagesBundle.getText("action.dashboard.home-page.text");
 
     public HomePageAction() {
-        super(text, "Plugin Home page", MyIcons.Actions.HomePage);
+        super(text, "Plugin Home page", MyIcons.EasyDeploy);
     }
 
     @Override

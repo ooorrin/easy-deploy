@@ -1,8 +1,12 @@
 package tech.lin2j.idea.plugin.ui.dialog;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.ToggleAction;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
@@ -45,6 +49,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import static tech.lin2j.idea.plugin.enums.Constant.LOCAL_FILE_INFO_SEPARATOR;
+import static tech.lin2j.idea.plugin.enums.Constant.STR_FALSE;
+import static tech.lin2j.idea.plugin.enums.Constant.STR_TRUE;
+
 /**
  * @author linjinjia
  * @date 2024/5/4 16:03
@@ -57,6 +65,8 @@ public class AddUploadProfileDialog extends DialogWrapper {
     private JBTextField excludeInput;
     private JBTextField locationInput;
     private TextFieldWithBrowseButton fileBrowser;
+    private JPanel fileContainer;
+    private boolean useRegex;
     private JPanel commandBoxContainer;
     private ComboBox<Command> commandBox;
     private JBLabel ignored;
@@ -76,7 +86,7 @@ public class AddUploadProfileDialog extends DialogWrapper {
 
         root = FormBuilder.createFormBuilder()
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.name"), nameRow())
-                .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.file"), fileBrowser)
+                .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.file"), fileContainer)
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.exclude"), excludeInput)
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.location"), locationInput)
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.command"), commandBoxContainer)
@@ -96,14 +106,11 @@ public class AddUploadProfileDialog extends DialogWrapper {
     @Override
     protected void doOKAction() {
         String name = nameInput.getText();
-        String file = fileBrowser.getText();
+        String file = fileBrowser.getText() + LOCAL_FILE_INFO_SEPARATOR + (useRegex ? STR_TRUE : STR_FALSE);
         String location = locationInput.getText();
         Command command = (Command) commandBox.getSelectedItem();
 
         String exclude = excludeInput.getText();
-//        if (!FileUtil.isDirectory(file)) {
-//            exclude = "";
-//        }
 
         // update config if profile is exist
         Integer sshId = profile.getSshId();
@@ -198,9 +205,19 @@ public class AddUploadProfileDialog extends DialogWrapper {
             VirtualFile virtualFile = FileChooser.chooseFile(descriptor, fileBrowser, project,  getCurrentWorkingDir());
             if (virtualFile != null) {
                 fileBrowser.setText(virtualFile.getPath());
-//                excludeInput.setEnabled(virtualFile.isDirectory());
             }
         });
+
+        DefaultActionGroup group = new DefaultActionGroup();
+        group.add(new RegexToggleAction());
+        ActionToolbar uploadToolbar = ActionManager.getInstance()
+                .createActionToolbar("AddUploadProfileDialog@UseRegex", group, true);
+        uploadToolbar.setTargetComponent(null);
+        fileContainer = new JPanel(new GridBagLayout());
+        fileContainer.add(fileBrowser, new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
+                JBUI.emptyInsets(), 0, 0));
+        fileContainer.add(uploadToolbar.getComponent(), new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
+                JBUI.emptyInsets(), 0, 0));
     }
 
     private void setContent() {
@@ -209,7 +226,11 @@ public class AddUploadProfileDialog extends DialogWrapper {
 
     private void setContent(UploadProfile up) {
         nameInput.setText(up.getName());
-        fileBrowser.setText(up.getFile());
+        if (up.getFile() != null) {
+            String[] split = up.getFile().split(LOCAL_FILE_INFO_SEPARATOR);
+            fileBrowser.setText(split[0]);
+            useRegex = split.length == 2 && Objects.equals(split[1], STR_TRUE);
+        }
         if (FileUtil.isDirectory(up.getFile())) {
             excludeInput.setEnabled(true);
             excludeInput.setText(up.getExclude());
@@ -267,4 +288,24 @@ public class AddUploadProfileDialog extends DialogWrapper {
         return new FileChooserDescriptor(true, true, true, true, true, false);
     }
 
+    private class RegexToggleAction extends ToggleAction {
+        public RegexToggleAction() {
+            super("Regex", "Use regex",AllIcons.Actions.Regex);
+        }
+
+        @Override
+        public boolean isSelected(@NotNull AnActionEvent e) {
+            return useRegex;
+        }
+
+        @Override
+        public void setSelected(@NotNull AnActionEvent e, boolean state) {
+            useRegex = state;
+        }
+
+        @Override
+        public @NotNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.BGT;
+        }
+    }
 }

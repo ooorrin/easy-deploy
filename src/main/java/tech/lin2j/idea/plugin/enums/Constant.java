@@ -8,6 +8,10 @@ import tech.lin2j.idea.plugin.model.UploadProfile;
  */
 public interface Constant {
 
+    String EASY_DEPLOY = "EasyDeploy";
+
+    String UPDATE_CHECKER_PROPERTY = "easy-deploy.statistics.timestamp";
+
     String STR_FALSE = "0";
 
     String STR_TRUE = "1";

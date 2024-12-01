@@ -12,17 +12,21 @@ import javax.swing.Icon;
  * @author linjinjia
  * @date 2024/5/26 15:14
  */
-public class PluginUtil {
+public class EasyDeployPluginUtil {
 
-    private static final PluginId PLUGIN_ID = PluginId.getId("tech.lin2j.simple-deployment");
-    private static final String version = PluginManagerCore.getPlugin(PLUGIN_ID).getVersion();
+    public static final PluginId PLUGIN_ID = PluginId.getId("tech.lin2j.simple-deployment");
+    public static final String version = PluginManagerCore.getPlugin(PLUGIN_ID).getVersion();
 
     public static String version() {
         return version;
     }
 
+    public static boolean isEnabled() {
+        return PluginManagerCore.getPlugin(PLUGIN_ID).isEnabled();
+    }
+
     public static JBLabel versionLabel() {
-        return new JBLabel("Version: " + PluginUtil.version());
+        return new JBLabel("Version: " + EasyDeployPluginUtil.version());
     }
 
     public static JBLabel pluginIconLabel() {

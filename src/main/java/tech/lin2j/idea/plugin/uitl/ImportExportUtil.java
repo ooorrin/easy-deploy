@@ -33,7 +33,7 @@ public class ImportExportUtil {
     public static ConfigImportExport exportBaseOnOptions(ExportOptions options) throws Exception {
         ConfigImportExport dto = new ConfigImportExport();
         dto.setOptions(options);
-        dto.setVersion(PluginUtil.version());
+        dto.setVersion(EasyDeployPluginUtil.version());
         if (options.isServerTags()) {
             dto.setServerTags(ConfigHelper.getServerTags());
         }

@@ -7,6 +7,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
+import tech.lin2j.idea.plugin.enums.Constant;
 
 /**
  * @author linjinjia
@@ -18,7 +19,7 @@ public final class PluginNotificationService {
     private final NotificationGroup notificationGroup;
 
     public PluginNotificationService() {
-        notificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("EasyDeploy");
+        notificationGroup = NotificationGroupManager.getInstance().getNotificationGroup(Constant.EASY_DEPLOY);
     }
 
     public void showNotification(Project project, String title, String message) {

@@ -12,7 +12,7 @@ import tech.lin2j.idea.plugin.model.ExportOptions;
 import tech.lin2j.idea.plugin.uitl.FileUtil;
 import tech.lin2j.idea.plugin.uitl.ImportExportUtil;
 import tech.lin2j.idea.plugin.uitl.MessagesBundle;
-import tech.lin2j.idea.plugin.uitl.PluginUtil;
+import tech.lin2j.idea.plugin.uitl.EasyDeployPluginUtil;
 
 import javax.swing.SwingUtilities;
 
@@ -43,7 +43,7 @@ public class ConfigExportAction extends NewUpdateThreadAction {
             }
 
             String filepath = ConfigHelper.pluginSetting().getDefaultExportImportPath();
-            String filename = filepath + "/EasyDeploy@" + PluginUtil.version() + ".json";
+            String filename = filepath + "/EasyDeploy@" + EasyDeployPluginUtil.version() + ".json";
 
             ExportOptions options = ConfigHelper.pluginSetting().getExportOptions();
             ConfigImportExport dto = ImportExportUtil.exportBaseOnOptions(options);

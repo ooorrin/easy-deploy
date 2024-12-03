@@ -122,7 +122,7 @@ public class ClassRetransformDialog extends DialogWrapper {
 
     @Override
     protected void doHelpAction() {
-        WebBrowseUtil.browse("https://www.lin2j.tech/md/easy-deploy/brief.html");
+        WebBrowseUtil.browse("https://www.lin2j.tech/md/easy-deploy/retransform.html");
     }
 
     @Override

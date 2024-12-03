@@ -1,7 +1,8 @@
 package tech.lin2j.idea.plugin.ui.dialog;
 
-import com.intellij.json.JsonFileType;
+//import com.intellij.json.JsonFileType;
 import com.intellij.lang.Language;
+import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.AdditionalPageAtBottomEditorCustomization;
@@ -50,8 +51,9 @@ public class ImportConfigPreviewDialog extends DialogWrapper {
         features.add(editor -> editor.setBackgroundColor(null));
         features.add((editor -> editor.getSettings().setLineNumbersShown(true)));
 
-        Language json = JsonFileType.INSTANCE.getLanguage();
-        editor = EditorTextFieldProvider.getInstance().getEditorField(json, project, features);
+//        Language json = JsonFileType.INSTANCE.getLanguage();
+        Language text = PlainTextFileType.INSTANCE.getLanguage();
+        editor = EditorTextFieldProvider.getInstance().getEditorField(text, project, features);
 
         // Global editor color scheme is set by EditorTextField logic.
         // We also need to use font from it and not from the current LaF.

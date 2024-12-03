@@ -24,6 +24,7 @@
         <li>Add/Edit/Remove/Share commands</li>
         <li>Upload files or directories with filtering support</li>
         <li>Deploy services</li>
+        <li>Remote class hot update</li>
         <li>Open terminal</li>
         <li>SSH password-free login (private key login)</li>
         <li>SSH jump host</li>
@@ -51,6 +52,7 @@
         <li>添加/编辑/删除/分享命令</li>
         <li>上传文件或者目录，并支持过滤</li>
         <li>文件（目录）上传配置</li>
+        <li>远程类热更新</li>
         <li>终端连接</li>
         <li>SSH 免密登录（私钥登录）</li>
         <li>SSH 代理跳板机</li>
@@ -207,7 +209,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends>com.intellij.java</depends>
-    <depends>com.intellij.modules.json</depends>
+<!--    <depends>com.intellij.modules.json</depends>-->
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->

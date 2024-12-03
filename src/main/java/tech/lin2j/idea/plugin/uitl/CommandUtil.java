@@ -78,7 +78,7 @@ public class CommandUtil {
                     targetFile = PathUtil.getParentPath(targetFile);
                 }
 
-                commandLog.info("Upload [" + localFile + "] to [" + remoteTargetDir + "]" + (useRegex ? ", regex: true" : ""));
+                commandLog.info("Upload [" + targetFile + "] to [" + remoteTargetDir + "]" + (useRegex ? ", regex: true" : ""));
                 sshjConnection.setTransferListener(new ConsoleTransferListener(targetFile, commandLog));
                 boolean success = sshService.upload(filter, sshjConnection, targetFile, remoteTargetDir, commandLog, !useRegex);
                 if (!success) {

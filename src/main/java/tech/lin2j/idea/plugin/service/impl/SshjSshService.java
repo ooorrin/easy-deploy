@@ -1,6 +1,5 @@
 package tech.lin2j.idea.plugin.service.impl;
 
-import com.intellij.openapi.diagnostic.Logger;
 import net.schmizz.sshj.xfer.TransferListener;
 import tech.lin2j.idea.plugin.file.filter.FileFilter;
 import tech.lin2j.idea.plugin.service.ISshService;
@@ -18,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2024/1/5 21:14
  */
 public class SshjSshService implements ISshService {
-    private static final Logger log = Logger.getInstance(SshjSshService.class);
 
     @Override
     public SshStatus isValid(SshServer sshServer) {
@@ -31,7 +29,6 @@ public class SshjSshService implements ISshService {
                 status = true;
             }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
             msg = e.getMessage();
         } finally {
             close(sshjConnection);
@@ -46,7 +43,6 @@ public class SshjSshService implements ISshService {
             sshjConnection = SshConnectionManager.makeSshjConnection(sshServer);
             return sshjConnection.execute(command);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
             return new SshStatus(false, e.getMessage());
         } finally {
             close(sshjConnection);
@@ -60,7 +56,6 @@ public class SshjSshService implements ISshService {
             sshjConnection = SshConnectionManager.makeSshjConnection(sshServer);
             sshjConnection.executeAsync(commandLog, command, new AtomicBoolean(false), true);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
             commandLog.error(e.getMessage());
         }
     }
@@ -80,7 +75,6 @@ public class SshjSshService implements ISshService {
             sshjConnection.download(remoteFile, localFile);
             status = true;
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
             msg = e.getMessage();
         } finally {
             close(sshjConnection);
@@ -110,7 +104,6 @@ public class SshjSshService implements ISshService {
                 putFile(sshjConnection, filter, localFile, remoteDir);
             }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
             status.setSuccess(false);
             status.setMessage(e.getMessage());
         } finally {

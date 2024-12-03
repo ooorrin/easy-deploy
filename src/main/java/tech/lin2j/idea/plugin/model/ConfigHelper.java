@@ -59,43 +59,54 @@ public class ConfigHelper {
         refreshConfig();
     }
 
+    // api
+
     public static int language() {
+        ensureConfigLoadInMemory();
         return pluginSetting().getI18nType();
     }
 
     public static int transferMode() {
+        ensureConfigLoadInMemory();
         return pluginSetting().getTransferMode();
     }
 
     public static boolean isSCPTransferMode() {
+        ensureConfigLoadInMemory();
         return Objects.equals(pluginSetting().getTransferMode(), TransferMode.SCP.getType());
     }
 
     public static SshServer getSshServerById(int id) {
+        ensureConfigLoadInMemory();
         return SSH_SERVER_MAP.get(id);
     }
 
     public static List<SshServer> sshServers() {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getSshServers();
     }
 
     public static int maxSshServerId() {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getSshServers().stream()
                 .map(SshServer::getId)
                 .max(Integer::compareTo).orElse(0);
     }
 
     public static void addSshServer(SshServer sshServer) {
+        ensureConfigLoadInMemory();
         CONFIG_PERSISTENCE.getSshServers().add(sshServer);
         SSH_SERVER_MAP.put(sshServer.getId(), sshServer);
     }
 
     public static void removeSshServer(SshServer sshServer) {
+        ensureConfigLoadInMemory();
         CONFIG_PERSISTENCE.getSshServers().remove(sshServer);
         SSH_SERVER_MAP.remove(sshServer.getId());
     }
 
     public static void removeSshServer(Integer id) {
+        ensureConfigLoadInMemory();
         SshServer sshServer = SSH_SERVER_MAP.get(id);
         if (sshServer == null) {
             return;
@@ -112,10 +123,12 @@ public class ConfigHelper {
     }
 
     public static List<Command> getCommandsBySshId(int sshId) {
+        ensureConfigLoadInMemory();
         return COMMAND_MAP.getOrDefault(sshId, new ArrayList<>());
     }
 
     public static List<Command> getSharableCommands(Integer excludeSshId) {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getCommands().stream()
                 .filter(Command::getSharable)
                 .filter(cmd -> !Objects.equals(cmd.getSshId(), excludeSshId))
@@ -123,46 +136,54 @@ public class ConfigHelper {
     }
 
     public static void addCommand(Command command) {
+        ensureConfigLoadInMemory();
         CONFIG_PERSISTENCE.getCommands().add(command);
         COMMAND_MAP = CONFIG_PERSISTENCE.getCommands().stream()
                 .collect(Collectors.groupingBy(Command::getSshId));
     }
 
     public static void removeCommand(Command command) {
+        ensureConfigLoadInMemory();
         CONFIG_PERSISTENCE.getCommands().remove(command);
         COMMAND_MAP = CONFIG_PERSISTENCE.getCommands().stream()
                 .collect(Collectors.groupingBy(Command::getSshId));
     }
 
     public static Integer maxCommandId() {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getCommands().stream()
                 .map(Command::getId)
                 .max(Integer::compareTo).orElse(0);
     }
 
     public static Command getCommandById(int id) {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getCommands().stream()
                 .filter(command -> command.getId() == id)
                 .findFirst().orElse(null);
     }
 
     public static List<UploadProfile> getUploadProfileBySshId(int sshId) {
+        ensureConfigLoadInMemory();
         return UPLOAD_PROFILE_MAP.getOrDefault(sshId, new ArrayList<>());
     }
 
     public static void addUploadProfile(UploadProfile uploadProfile) {
+        ensureConfigLoadInMemory();
         CONFIG_PERSISTENCE.getUploadProfiles().add(uploadProfile);
         UPLOAD_PROFILE_MAP = CONFIG_PERSISTENCE.getUploadProfiles().stream()
                 .collect(Collectors.groupingBy(UploadProfile::getSshId));
     }
 
     public static void removeUploadProfile(UploadProfile uploadProfile) {
+        ensureConfigLoadInMemory();
         CONFIG_PERSISTENCE.getUploadProfiles().remove(uploadProfile);
         UPLOAD_PROFILE_MAP = CONFIG_PERSISTENCE.getUploadProfiles().stream()
                 .collect(Collectors.groupingBy(UploadProfile::getSshId));
     }
 
     public static int maxUploadProfileId() {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getUploadProfiles().stream()
                 .filter(Objects::nonNull)
                 .map(UploadProfile::getId)
@@ -170,20 +191,24 @@ public class ConfigHelper {
     }
 
     public static List<String> getServerTags() {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getServerTags();
     }
 
     public static void setSshServerTags(List<String> newTags) {
+        ensureConfigLoadInMemory();
         CONFIG_PERSISTENCE.setServerTags(newTags);
     }
 
     public static UploadProfile getOneUploadProfileById(int sshId, int profileId) {
+        ensureConfigLoadInMemory();
         return getUploadProfileBySshId(sshId).stream()
                 .filter(p -> Objects.equals(p.getId(), profileId))
                 .findFirst().orElse(null);
     }
 
     public static PluginSetting pluginSetting() {
+        ensureConfigLoadInMemory();
         return CONFIG_PERSISTENCE.getSetting();
     }
 }

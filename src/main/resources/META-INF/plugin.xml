@@ -67,6 +67,20 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <h2>release 1.3.8</h2>
+    <ul>
+        <li>Add remote Java class hot update using Arthas (single file only).</li>
+        <li>Add SCP file transfer mode, allowing selection between SCP and SFTP in settings.</li>
+        <li>Change <code>SFTPVirtualFile</code> to extend <code>LightVirtualFile</code>.</li>
+        <li>Update SSH error logs to Warn level while retaining error prompts.</li>
+        <li>Refactor file upload and command execution logic for better logging and code consistency.</li>
+        <li>Support regex configuration for local file info in upload settings.</li>
+        <li>Display transfer speed during file upload (accuracy improves with larger files).</li>
+        <li>Fix compatibility issues with the JSON plugin.</li>
+        <li>Refactor code to align with platform style, enhance reusability, and remove unused code.</li>
+        <li>Add version update notification via bubble messages.</li>
+    </ul>
+
     <h2>release 1.3.7</h2>
     <ul>
         <li>Commands can be shared</li>

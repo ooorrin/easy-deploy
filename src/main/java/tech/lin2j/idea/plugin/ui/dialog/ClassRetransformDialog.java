@@ -308,7 +308,7 @@ public class ClassRetransformDialog extends DialogWrapper {
     private List<JavaProcess> getJavaProcesses() throws IOException {
         if (this.javaProcesses == null) {
             List<String> processes = hotReloadService.listJavaProcess(getSshjConnection());
-            this.javaProcesses = processes.stream().map(JavaProcess::new).collect(Collectors.toList());
+            this.javaProcesses = processes.stream().map(JavaProcess::new).sorted().collect(Collectors.toList());
             this.project.putUserData(JAVA_PROCESSES, javaProcesses);
         }
         return this.javaProcesses;

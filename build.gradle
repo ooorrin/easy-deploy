@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.hierynomus:sshj:0.38.0'
+    implementation 'com.hierynomus:sshj:0.39.0'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

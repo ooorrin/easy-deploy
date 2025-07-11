@@ -78,7 +78,15 @@ public class CommandUtil {
                 try {
                     // it is not recommended to executing command like "tail -f",
                     // because it will block the thread
-                    SshStatus status = sshService.execute(server, cmd.generateCmdLine());
+                    String cmdLine;
+                    if (profile != null && profile.getUseUploadPath() != null && profile.getUseUploadPath()) {
+                        // Use upload target directory as command execution directory
+                        cmdLine = cmd.generateCmdLine(profile.getLocation());
+                    } else {
+                        // Use command's configured directory
+                        cmdLine = cmd.generateCmdLine();
+                    }
+                    SshStatus status = sshService.execute(server, cmdLine);
                     commandEvent.setSuccess(status.isSuccess());
                     commandEvent.setExecResult(status.getMessage());
                 } catch (Exception e1) {

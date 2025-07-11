@@ -31,6 +31,11 @@ public class UploadProfile implements Cloneable, UniqueModel {
 
     private Boolean isSelected = false;
 
+    /**
+     * Use upload path as command execution directory
+     */
+    private Boolean useUploadPath = false;
+
     public Integer getId() {
         return id;
     }
@@ -103,6 +108,14 @@ public class UploadProfile implements Cloneable, UniqueModel {
     @Override
     public void setUid(String uid) {
         this.uid = uid;
+    }
+
+    public Boolean getUseUploadPath() {
+        return useUploadPath;
+    }
+
+    public void setUseUploadPath(Boolean useUploadPath) {
+        this.useUploadPath = useUploadPath;
     }
 
     @Override

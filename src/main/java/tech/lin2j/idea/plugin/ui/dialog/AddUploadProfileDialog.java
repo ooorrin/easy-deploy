@@ -13,6 +13,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.CollectionComboBoxModel;
+import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
@@ -59,6 +60,7 @@ public class AddUploadProfileDialog extends DialogWrapper {
     private TextFieldWithBrowseButton fileBrowser;
     private JPanel commandBoxContainer;
     private ComboBox<Command> commandBox;
+    private JBCheckBox useUploadPathCheckBox;
     private JBLabel ignored;
 
     private final Project project;
@@ -80,6 +82,7 @@ public class AddUploadProfileDialog extends DialogWrapper {
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.exclude"), excludeInput)
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.location"), locationInput)
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.command"), commandBoxContainer)
+                .addComponent(useUploadPathCheckBox)
                 .addComponent(ignored)
                 .getPanel();
 
@@ -114,6 +117,7 @@ public class AddUploadProfileDialog extends DialogWrapper {
             profile.setExclude(trim(exclude));
             profile.setLocation(trim(location));
             profile.setCommandId(getCommandId(command));
+            profile.setUseUploadPath(useUploadPathCheckBox.isSelected());
             profile.setSelected(true);
             ApplicationContext.getApplicationContext().publishEvent(new UploadProfileSelectedEvent(profile));
         } else {
@@ -125,6 +129,7 @@ public class AddUploadProfileDialog extends DialogWrapper {
             newProfile.setExclude(trim(exclude));
             newProfile.setLocation(trim(location));
             newProfile.setCommandId(getCommandId(command));
+            newProfile.setUseUploadPath(useUploadPathCheckBox.isSelected());
             newProfile.setSelected(true);
             newProfile.setUid(UUID.randomUUID().toString());
 
@@ -142,6 +147,9 @@ public class AddUploadProfileDialog extends DialogWrapper {
         locationInput = new JBTextField();
         excludeInput = new JBTextField();
         excludeInput.getEmptyText().setText("*.log;*.iml");
+
+        useUploadPathCheckBox = new JBCheckBox("Use upload path as command execution directory");
+        useUploadPathCheckBox.setToolTipText("When enabled, command will execute in the upload target directory instead of the configured command directory");
 
         ignored = new JBLabel();
         ignored.setPreferredSize(new Dimension(UiUtil.screenWidth() / 2 - 40, 0));
@@ -215,6 +223,7 @@ public class AddUploadProfileDialog extends DialogWrapper {
             excludeInput.setText(up.getExclude());
         }
         locationInput.setText(up.getLocation());
+        useUploadPathCheckBox.setSelected(up.getUseUploadPath() != null && up.getUseUploadPath());
         for (int i = 0; i < commandBox.getItemCount(); i++) {
             Command command = commandBox.getItemAt(i);
             if (command instanceof SeparatorCommand) {

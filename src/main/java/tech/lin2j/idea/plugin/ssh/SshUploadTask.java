@@ -84,7 +84,14 @@ public class SshUploadTask implements Runnable{
             return;
         }
 
-        String cmdLine = cmd.generateCmdLine();
+        String cmdLine;
+        if (profile.getUseUploadPath() != null && profile.getUseUploadPath()) {
+            // Use upload target directory as command execution directory
+            cmdLine = cmd.generateCmdLine(profile.getLocation());
+        } else {
+            // Use command's configured directory
+            cmdLine = cmd.generateCmdLine();
+        }
         println("Execute custom command: " + cmdLine);
         SshStatus execStatus = sshService.execute(server, cmdLine);
         if (!execStatus.isSuccess()) {

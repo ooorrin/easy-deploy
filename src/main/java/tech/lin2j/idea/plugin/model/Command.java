@@ -44,6 +44,11 @@ public class Command implements Cloneable, UniqueModel {
         return "cd " + dir + "; " + content;
     }
 
+    public String generateCmdLine(String overrideDir) {
+        String workingDir = (overrideDir != null && !overrideDir.trim().isEmpty()) ? overrideDir : dir;
+        return "cd " + workingDir + "; " + content;
+    }
+
     public String logString() {
         StringBuilder buf = new StringBuilder();
         buf.append("cd ").append(dir).append(";\n");

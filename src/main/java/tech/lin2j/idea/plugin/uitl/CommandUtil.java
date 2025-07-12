@@ -64,6 +64,10 @@ public class CommandUtil {
         try {
             SshjConnection sshjConnection = SshConnectionManager.makeSshjConnection(server);
             ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
+            
+            // Execute pre-upload command if exists
+            executeCommand(profile.getPreCommandId(), "pre-upload", profile, server, sshService, sshjConnection, commandLog);
+
             String[] localFiles = profile.getFile().split(Constant.LOCAL_FILE_SEPARATOR);
 
             printTransferMode(commandLog);
@@ -91,18 +95,46 @@ public class CommandUtil {
                 }
             }
 
-            if (allUploaded && profile.getCommandId() != null) {
-                Command command = ConfigHelper.getCommandById(profile.getCommandId());
-                String cmdContent = command.generateCmdLine();
-                commandLog.info(String.format("Execute command on %s:%s : {%s}", server.getIp(), server.getPort(), cmdContent));
-                sshService.executeAsync(commandLog, sshjConnection, cmdContent);
-            } else {
-                printFinished(commandLog);
-                sshjConnection.close();
+            if (allUploaded) {
+                // Handle backward compatibility: if preCommandId and postCommandId are null but commandId exists, migrate to postCommandId
+                Integer postCommandId = profile.getPostCommandId();
+                if (profile.getPreCommandId() == null && postCommandId == null && profile.getCommandId() != null) {
+                    postCommandId = profile.getCommandId();
+                }
+                
+                // Execute post-upload command if exists
+                executeCommand(postCommandId, "post-upload", profile, server, sshService, sshjConnection, commandLog);
             }
+            
+            printFinished(commandLog);
+            sshjConnection.close();
         } catch (Exception e) {
             commandLog.error(e.getMessage());
         }
+    }
+
+    private static void executeCommand(Integer commandId, String timing, UploadProfile profile, SshServer server, 
+                                     ISshService sshService, SshjConnection sshjConnection, CommandLog commandLog) {
+        if (commandId == null) {
+            return;
+        }
+        
+        Command command = ConfigHelper.getCommandById(commandId);
+        if (command == null) {
+            return;
+        }
+        
+        String cmdContent;
+        if (profile.getUseUploadPath() != null && profile.getUseUploadPath()) {
+            // Use upload target directory as command execution directory
+            cmdContent = command.generateCmdLine(profile.getLocation());
+        } else {
+            // Use command's configured directory
+            cmdContent = command.generateCmdLine();
+        }
+        
+        commandLog.info(String.format("Execute %s command on %s:%s : {%s}", timing, server.getIp(), server.getPort(), cmdContent));
+        sshService.executeAsync(commandLog, sshjConnection, cmdContent);
     }
 
     public static void executeCommand(Command command, SshServer server, CommandLog commandLog) {

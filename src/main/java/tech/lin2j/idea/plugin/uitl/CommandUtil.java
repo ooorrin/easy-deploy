@@ -20,6 +20,7 @@ import tech.lin2j.idea.plugin.service.ISshService;
 import tech.lin2j.idea.plugin.ssh.CommandLog;
 import tech.lin2j.idea.plugin.ssh.SshConnectionManager;
 import tech.lin2j.idea.plugin.ssh.SshServer;
+import tech.lin2j.idea.plugin.ssh.SshStatus;
 import tech.lin2j.idea.plugin.ssh.sshj.SshjConnection;
 
 import java.time.LocalDateTime;
@@ -65,8 +66,8 @@ public class CommandUtil {
             SshjConnection sshjConnection = SshConnectionManager.makeSshjConnection(server);
             ISshService sshService = ApplicationManager.getApplication().getService(ISshService.class);
             
-            // Execute pre-upload command if exists
-            executeCommand(profile.getPreCommandId(), "pre-upload", profile, server, sshService, sshjConnection, commandLog);
+            // Execute pre-upload command if exists (synchronously)
+            executeCommand(profile.getPreCommandId(), "pre-upload", profile, server, sshService, sshjConnection, commandLog, true);
 
             String[] localFiles = profile.getFile().split(Constant.LOCAL_FILE_SEPARATOR);
 
@@ -102,8 +103,8 @@ public class CommandUtil {
                     postCommandId = profile.getCommandId();
                 }
                 
-                // Execute post-upload command if exists
-                executeCommand(postCommandId, "post-upload", profile, server, sshService, sshjConnection, commandLog);
+                // Execute post-upload command if exists (asynchronously)
+                executeCommand(postCommandId, "post-upload", profile, server, sshService, sshjConnection, commandLog, false);
             }
             
             printFinished(commandLog);
@@ -114,7 +115,7 @@ public class CommandUtil {
     }
 
     private static void executeCommand(Integer commandId, String timing, UploadProfile profile, SshServer server, 
-                                     ISshService sshService, SshjConnection sshjConnection, CommandLog commandLog) {
+                                     ISshService sshService, SshjConnection sshjConnection, CommandLog commandLog, boolean synchronous) {
         if (commandId == null) {
             return;
         }
@@ -134,7 +135,24 @@ public class CommandUtil {
         }
         
         commandLog.info(String.format("Execute %s command on %s:%s : {%s}", timing, server.getIp(), server.getPort(), cmdContent));
-        sshService.executeAsync(commandLog, sshjConnection, cmdContent);
+        
+        // Execute command synchronously or asynchronously based on the synchronous parameter
+        if (synchronous) {
+            try {
+                SshStatus result = sshjConnection.execute(cmdContent);
+                if (!result.isSuccess()) {
+                    commandLog.error(String.format("%s command failed: %s", timing, result.getMessage()));
+                    throw new RuntimeException(timing + " command failed: " + result.getMessage());
+                }
+                commandLog.info(timing + " command completed successfully");
+            } catch (Exception e) {
+                commandLog.error(String.format("%s command execution error: %s", timing, e.getMessage()));
+                throw new RuntimeException(timing + " command execution error: " + e.getMessage());
+            }
+        } else {
+            // Execute asynchronously
+            sshService.executeAsync(commandLog, sshjConnection, cmdContent);
+        }
     }
 
     public static void executeCommand(Command command, SshServer server, CommandLog commandLog) {

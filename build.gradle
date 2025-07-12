@@ -12,6 +12,8 @@ repositories {
 
 dependencies {
     implementation 'com.hierynomus:sshj:0.39.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.junit.vintage:junit-vintage-engine:5.8.2'
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

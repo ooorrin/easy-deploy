@@ -139,7 +139,7 @@ public class CommandUtil {
         // Execute command synchronously or asynchronously based on the synchronous parameter
         if (synchronous) {
             try {
-                SshStatus result = sshjConnection.execute(cmdContent);
+                SshStatus result = sshjConnection.execute(cmdContent, commandLog);
                 if (!result.isSuccess()) {
                     commandLog.error(String.format("%s command failed: %s", timing, result.getMessage()));
                     throw new RuntimeException(timing + " command failed: " + result.getMessage());

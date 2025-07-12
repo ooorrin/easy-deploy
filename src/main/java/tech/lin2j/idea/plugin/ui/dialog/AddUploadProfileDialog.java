@@ -1,12 +1,7 @@
 package tech.lin2j.idea.plugin.ui.dialog;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionToolbar;
-import com.intellij.openapi.actionSystem.ActionUpdateThread;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.actionSystem.ToggleAction;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
@@ -28,11 +23,7 @@ import tech.lin2j.idea.plugin.action.AddCommandAction;
 import tech.lin2j.idea.plugin.action.CopyUploadProfileAction;
 import tech.lin2j.idea.plugin.action.PasteUploadProfileAction;
 import tech.lin2j.idea.plugin.event.ApplicationContext;
-import tech.lin2j.idea.plugin.model.Command;
-import tech.lin2j.idea.plugin.model.ConfigHelper;
-import tech.lin2j.idea.plugin.model.NoneCommand;
-import tech.lin2j.idea.plugin.model.SeparatorCommand;
-import tech.lin2j.idea.plugin.model.UploadProfile;
+import tech.lin2j.idea.plugin.model.*;
 import tech.lin2j.idea.plugin.model.event.UploadProfileAddEvent;
 import tech.lin2j.idea.plugin.model.event.UploadProfileSelectedEvent;
 import tech.lin2j.idea.plugin.ui.render.CommandColoredListCellRenderer;
@@ -40,11 +31,8 @@ import tech.lin2j.idea.plugin.uitl.FileUtil;
 import tech.lin2j.idea.plugin.uitl.MessagesBundle;
 import tech.lin2j.idea.plugin.uitl.UiUtil;
 
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import javax.swing.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -93,8 +81,8 @@ public class AddUploadProfileDialog extends DialogWrapper {
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.file"), fileContainer)
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.exclude"), excludeInput)
                 .addLabeledComponent(MessagesBundle.getText("dialog.profile.add.location"), locationInput)
-                .addLabeledComponent("Pre-upload Command", preCommandBoxContainer)
-                .addLabeledComponent("Post-upload Command", postCommandBoxContainer)
+                .addLabeledComponent(MessagesBundle.getText("dialog.upload.pre-command"), preCommandBoxContainer)
+                .addLabeledComponent(MessagesBundle.getText("dialog.upload.post-command"), postCommandBoxContainer)
                 .addComponent(useUploadPathCheckBox)
                 .addComponent(ignored)
                 .getPanel();
@@ -161,8 +149,8 @@ public class AddUploadProfileDialog extends DialogWrapper {
         excludeInput = new JBTextField();
         excludeInput.getEmptyText().setText("*.log;*.iml");
 
-        useUploadPathCheckBox = new JBCheckBox("Use upload path as command execution directory");
-        useUploadPathCheckBox.setToolTipText("When enabled, command will execute in the upload target directory instead of the configured command directory");
+        useUploadPathCheckBox = new JBCheckBox(MessagesBundle.getText("dialog.profile.add.use-upload-path"));
+        useUploadPathCheckBox.setToolTipText(MessagesBundle.getText("dialog.profile.add.use-upload-path.tooltip"));
 
         ignored = new JBLabel();
         ignored.setPreferredSize(new Dimension(UiUtil.screenWidth() / 2 - 40, 0));

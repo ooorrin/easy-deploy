@@ -241,7 +241,8 @@ public class UploadProfileDialog extends DialogWrapper implements ApplicationLis
                 if (StringUtil.isNotEmpty(preCmd.getTitle())) {
                     preCommandLabel.append(preCmd.getTitle() + TEXT_PADDING);
                 }
-                preCommandLabel.append(preCmd.toString(), SimpleTextAttributes.GRAY_ATTRIBUTES);
+                String overrideDir = (profile.getUseUploadPath() != null && profile.getUseUploadPath()) ? profile.getLocation() : null;
+                preCommandLabel.append(preCmd.toDisplayString(overrideDir), SimpleTextAttributes.GRAY_ATTRIBUTES);
             }
         }
         
@@ -255,7 +256,8 @@ public class UploadProfileDialog extends DialogWrapper implements ApplicationLis
                 if (StringUtil.isNotEmpty(postCmd.getTitle())) {
                     postCommandLabel.append(postCmd.getTitle() + TEXT_PADDING);
                 }
-                postCommandLabel.append(postCmd.toString(), SimpleTextAttributes.GRAY_ATTRIBUTES);
+                String overrideDir = (profile.getUseUploadPath() != null && profile.getUseUploadPath()) ? profile.getLocation() : null;
+                postCommandLabel.append(postCmd.toDisplayString(overrideDir), SimpleTextAttributes.GRAY_ATTRIBUTES);
             }
         }
     }

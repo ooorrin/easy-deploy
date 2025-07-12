@@ -15,6 +15,8 @@ import com.intellij.ui.CollectionComboBoxModel;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.SimpleColoredComponent;
+import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +62,8 @@ public class AddUploadProfileDialog extends DialogWrapper {
     private JPanel postCommandBoxContainer;
     private ComboBox<Command> preCommandBox;
     private ComboBox<Command> postCommandBox;
+    private SimpleColoredComponent preCommandPreview;
+    private SimpleColoredComponent postCommandPreview;
     private JBCheckBox useUploadPathCheckBox;
     private JBLabel ignored;
 
@@ -146,6 +150,22 @@ public class AddUploadProfileDialog extends DialogWrapper {
     private void initInput() {
         nameInput = new JBTextField();
         locationInput = new JBTextField();
+        locationInput.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateCommandPreview();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateCommandPreview();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateCommandPreview();
+            }
+        });
         excludeInput = new JBTextField();
         excludeInput.getEmptyText().setText("*.log;*.iml");
 
@@ -168,10 +188,16 @@ public class AddUploadProfileDialog extends DialogWrapper {
         // Pre-upload command box
         preCommandBox = new ComboBox<>(new CollectionComboBoxModel<>(new ArrayList<>(data)));
         preCommandBox.setRenderer(new CommandColoredListCellRenderer(sshId));
+        preCommandBox.addItemListener(e -> updateCommandPreview());
 
         // Post-upload command box
         postCommandBox = new ComboBox<>(new CollectionComboBoxModel<>(new ArrayList<>(data)));
         postCommandBox.setRenderer(new CommandColoredListCellRenderer(sshId));
+        postCommandBox.addItemListener(e -> updateCommandPreview());
+
+        // Initialize command preview components
+        preCommandPreview = new SimpleColoredComponent();
+        postCommandPreview = new SimpleColoredComponent();
 
         // Add command button for pre-upload
         DefaultActionGroup preGroup = new DefaultActionGroup();
@@ -185,6 +211,8 @@ public class AddUploadProfileDialog extends DialogWrapper {
                 JBUI.emptyInsets(), 0, 0));
         preCommandBoxContainer.add(preToolbar.getComponent(), new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
                 JBUI.emptyInsets(), 0, 0));
+        preCommandBoxContainer.add(preCommandPreview, new GridBagConstraints(0, 1, 2, 1, 1, 0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
+                JBUI.insets(2, 0), 0, 0));
 
         // Add command button for post-upload
         DefaultActionGroup postGroup = new DefaultActionGroup();
@@ -198,6 +226,11 @@ public class AddUploadProfileDialog extends DialogWrapper {
                 JBUI.emptyInsets(), 0, 0));
         postCommandBoxContainer.add(postToolbar.getComponent(), new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
                 JBUI.emptyInsets(), 0, 0));
+        postCommandBoxContainer.add(postCommandPreview, new GridBagConstraints(0, 1, 2, 1, 1, 0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
+                JBUI.insets(2, 0), 0, 0));
+        
+        // Add listener for useUploadPathCheckBox to update command preview
+        useUploadPathCheckBox.addActionListener(e -> updateCommandPreview());
     }
 
     private JPanel nameRow() {
@@ -270,6 +303,33 @@ public class AddUploadProfileDialog extends DialogWrapper {
         
         // Set post-upload command
         selectCommandInBox(postCommandBox, postCommandId);
+        
+        // Update command preview after setting content
+        updateCommandPreview();
+    }
+    
+    private void updateCommandPreview() {
+        String overrideDir = useUploadPathCheckBox.isSelected() ? locationInput.getText() : null;
+        
+        // Update pre-command preview
+        preCommandPreview.clear();
+        Command preCommand = (Command) preCommandBox.getSelectedItem();
+        if (preCommand != null && !(preCommand instanceof NoneCommand) && !(preCommand instanceof SeparatorCommand)) {
+            if (StringUtil.isNotEmpty(preCommand.getTitle())) {
+                preCommandPreview.append(preCommand.getTitle() + " ");
+            }
+            preCommandPreview.append(preCommand.toDisplayString(overrideDir), SimpleTextAttributes.GRAY_ATTRIBUTES);
+        }
+        
+        // Update post-command preview
+        postCommandPreview.clear();
+        Command postCommand = (Command) postCommandBox.getSelectedItem();
+        if (postCommand != null && !(postCommand instanceof NoneCommand) && !(postCommand instanceof SeparatorCommand)) {
+            if (StringUtil.isNotEmpty(postCommand.getTitle())) {
+                postCommandPreview.append(postCommand.getTitle() + " ");
+            }
+            postCommandPreview.append(postCommand.toDisplayString(overrideDir), SimpleTextAttributes.GRAY_ATTRIBUTES);
+        }
     }
     
     private void selectCommandInBox(ComboBox<Command> box, Integer commandId) {

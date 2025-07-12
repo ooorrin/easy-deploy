@@ -120,6 +120,11 @@ public class Command implements Cloneable, UniqueModel {
 
     @Override
     public String toString() {
+        return toDisplayString(null);
+    }
+
+    public String toDisplayString(String overrideDir) {
+        String displayDir = (overrideDir != null && !overrideDir.trim().isEmpty()) ? overrideDir : dir;
         String newDir = null;
         String newContent = null;
         if (content != null) {
@@ -128,9 +133,9 @@ public class Command implements Cloneable, UniqueModel {
                 newContent += "...";
             }
         }
-        if (dir != null) {
-            newDir = dir.substring(0, Math.min(dir.length(), 40));
-            if (newDir.length() < dir.length()) {
+        if (displayDir != null) {
+            newDir = displayDir.substring(0, Math.min(displayDir.length(), 40));
+            if (newDir.length() < displayDir.length()) {
                 newDir += "...";
             }
         }

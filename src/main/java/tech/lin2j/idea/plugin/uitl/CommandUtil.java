@@ -96,6 +96,7 @@ public class CommandUtil {
                 }
             }
 
+            boolean hasAsyncPostCommand = false;
             if (allUploaded) {
                 // Handle backward compatibility: if preCommandId and postCommandId are null but commandId exists, migrate to postCommandId
                 Integer postCommandId = profile.getPostCommandId();
@@ -104,11 +105,18 @@ public class CommandUtil {
                 }
                 
                 // Execute post-upload command if exists (asynchronously)
-                executeCommand(postCommandId, "post-upload", profile, server, sshService, sshjConnection, commandLog, false);
+                if (postCommandId != null) {
+                    hasAsyncPostCommand = true;
+                    executeCommand(postCommandId, "post-upload", profile, server, sshService, sshjConnection, commandLog, false);
+                }
             }
             
             printFinished(commandLog);
-            sshjConnection.close();
+            // Only close connection in main thread if no async post command is running
+            // Async post command will close the connection itself
+            if (!hasAsyncPostCommand) {
+                sshjConnection.close();
+            }
         } catch (Exception e) {
             commandLog.error(e.getMessage());
         }
